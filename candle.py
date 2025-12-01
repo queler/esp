@@ -12,7 +12,6 @@ class Candle:
 
         self.current_duty = 0
         self.task = None
-        self.enabled = False
         self.led = PWM(Pin(pin), freq=freq)
         self.led.duty_u16(0)
 
@@ -31,8 +30,7 @@ class Candle:
     # --- REPL-friendly methods ---
     def on(self):
         self.enabled = True
-        loop = asyncio.get_event_loop()
-        self.task = loop.create_task(self._loop())
+        self.task=asyncio.create_task(self._loop())
     def off(self):
         self.enabled = False
         if self.task is not None:
