@@ -16,5 +16,14 @@
     "micropico.autoConnect": false,
     "micropico.manualComDevice": "/dev/ttyUSB0",
     "micropico.softResetAfterUpload": true,
-    "terminal.integrated.defaultProfile.linux": "bash"
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "cSpell.ignorePaths": [
+        "*.toml"
+    ],
+    "spellright.language": [],
+    "spellright.documentTypes": [
+        "markdown",
+        "latex"
+    ]
 }

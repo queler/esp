@@ -1,0 +1,8 @@
+[wokwi]
+version = 1
+firmware = "firmware/ESP32_GENERIC-20250911-v1.26.1.bin"
+rfc2217ServerPort = 4000
+# Forward http://localhost:8180 to port 80 on the simulated ESP32:
+[[net.forward]]
+from = "localhost:8180"
+to = "target:80"
