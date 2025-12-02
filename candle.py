@@ -3,9 +3,9 @@ import uasyncio as asyncio
 import random
 from machine import Pin, PWM
 
-MAX = 65535
 
 class Candle:
+    MAX = 65535
 
     def __init__(self, pin, width=80, freq=5000):
         self.pin = pin
@@ -21,9 +21,9 @@ class Candle:
         #self.task = loop.create_task(self._loop())
     async def _loop(self):
         while True:
-            base = int(MAX * (1 - self.width / 100))
-            rng = int(MAX * (self.width / 100))
-            duty = max(0, min(MAX, base + random.randint(-rng, rng)))
+            base = int(self.MAX * (self.width / 100))
+            rng = int(self.MAX * (1-self.width / 100))
+            duty = max(0, min(self.MAX, base + random.randint(-rng, rng)))
             self.current_duty = duty
             self.led.duty_u16(duty)
             await asyncio.sleep_ms(random.randint(50, 150))
