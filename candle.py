@@ -6,7 +6,8 @@ from machine import Pin, PWM
 MAX = 65535
 
 class Candle:
-    def __init__(self, pin, width=50, freq=5000):
+
+    def __init__(self, pin, width=80, freq=5000):
         self.pin = pin
         self.width = width
 
