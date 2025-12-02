@@ -1,26 +1,10 @@
 {
-  "python.languageServer": "Pylance",
-  "python.analysis.typeCheckingMode": "basic",
-  "python.analysis.diagnosticSeverityOverrides": {
-    "reportMissingModuleSource": "none"
-  },
-  "python.terminal.activateEnvironment": false,
-  "micropico.openOnStart": true,
-  "python.analysis.typeshedPaths": [
-    "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1"
+  "cSpell.ignorePaths": [
+    "*.toml"
   ],
-  "python.analysis.extraPaths": [
-    "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1"
-  ],
-  "python-envs.pythonProjects": [],
   "micropico.autoConnect": false,
   "micropico.manualComDevice": "/dev/ttyUSB0",
-  "micropico.softResetAfterUpload": true,
-  "terminal.integrated.defaultProfile.linux": "bash",
-  "python-envs.defaultEnvManager": "ms-python.python:system",
-  "cSpell.ignorePaths": ["*.toml"],
-  "spellright.language": [],
-  "spellright.documentTypes": ["markdown", "latex"],
+  "micropico.openOnStart": true,
   "micropico.pyIgnore": [
     "**/.picowgo",
     "**/.micropico",
@@ -34,5 +18,26 @@
     "**/.venv",
     "**/.idea",
     ".lib"
-  ]
+  ],
+  "micropico.softResetAfterUpload": true,
+  "python-envs.defaultEnvManager": "ms-python.python:system",
+  "python-envs.pythonProjects": [],
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingModuleSource": "none"
+  },
+  "python.analysis.extraPaths": [
+    "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1"
+  ],
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.typeshedPaths": [
+    "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1"
+  ],
+  "python.languageServer": "Pylance",
+  "python.terminal.activateEnvironment": false,
+  "spellright.documentTypes": [
+    "markdown",
+    "latex"
+  ],
+  "spellright.language": [],
+  "terminal.integrated.defaultProfile.linux": "bash"
 }
