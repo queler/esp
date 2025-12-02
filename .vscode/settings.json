@@ -1,29 +1,38 @@
 {
-    "python.languageServer": "Pylance",
-    "python.analysis.typeCheckingMode": "basic",
-    "python.analysis.diagnosticSeverityOverrides": {
-        "reportMissingModuleSource": "none"
-    },
-    "python.terminal.activateEnvironment": false,
-    "micropico.openOnStart": true,
-    "python.analysis.typeshedPaths": [
-        "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1"
-    ],
-    "python.analysis.extraPaths": [
-        "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1"
-    ],
-    "python-envs.pythonProjects": [],
-    "micropico.autoConnect": false,
-    "micropico.manualComDevice": "/dev/ttyUSB0",
-    "micropico.softResetAfterUpload": true,
-    "terminal.integrated.defaultProfile.linux": "bash",
-    "python-envs.defaultEnvManager": "ms-python.python:system",
-    "cSpell.ignorePaths": [
-        "*.toml"
-    ],
-    "spellright.language": [],
-    "spellright.documentTypes": [
-        "markdown",
-        "latex"
-    ]
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingModuleSource": "none"
+  },
+  "python.terminal.activateEnvironment": false,
+  "micropico.openOnStart": true,
+  "python.analysis.typeshedPaths": [
+    "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1"
+  ],
+  "python.analysis.extraPaths": [
+    "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1"
+  ],
+  "python-envs.pythonProjects": [],
+  "micropico.autoConnect": false,
+  "micropico.manualComDevice": "/dev/ttyUSB0",
+  "micropico.softResetAfterUpload": true,
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "python-envs.defaultEnvManager": "ms-python.python:system",
+  "cSpell.ignorePaths": ["*.toml"],
+  "spellright.language": [],
+  "spellright.documentTypes": ["markdown", "latex"],
+  "micropico.pyIgnore": [
+    "**/.picowgo",
+    "**/.micropico",
+    "**/.vscode",
+    "**/.gitignore",
+    "**/.git",
+    "**/.DS_Store",
+    "**/project.pico-go",
+    "**/env",
+    "**/venv",
+    "**/.venv",
+    "**/.idea",
+    ".lib"
+  ]
 }

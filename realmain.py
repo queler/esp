@@ -41,7 +41,7 @@ async def go():
     #    print('yield forever')
     #    await asyncio.sleep(0)
 
-async def main():
+async def run():
     print("Starting tasks...")
 
     # Start other program tasks.
@@ -51,8 +51,6 @@ async def main():
     repl = asyncio.create_task(aiorepl.task())
 
     await asyncio.gather(t1, repl)
-
-asyncio.run(main())
 
 
 
