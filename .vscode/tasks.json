@@ -1,0 +1,35 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ESP32: Soft Reset",
+            "type": "shell",
+            "command": "/home/amq102/build/esp/venv/bin/mpremote u0 reset",
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP32: Soft Reset (soft)",
+            "type": "shell",
+            "command": "/home/amq102/build/esp/venv/bin/mpremote u0 soft-reset",
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP32: Mount Project",
+            "type": "shell",
+            "command": "/home/amq102/build/esp/venv/bin/mpremote u0 mount . reset",
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP32: Run realmain.run()",
+            "type": "shell",
+            "command": "/home/amq102/build/esp/venv/bin/mpremote u0 exec \"import realmain, uasyncio; uasyncio.run(realmain.run())\"",
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP32: Serial Monitor",
+            "type": "shell",
+            "command": "/home/amq102/build/esp/venv/bin/mpremote u0 repl",
+            "problemMatcher": []
+        }
+    ]
+}
