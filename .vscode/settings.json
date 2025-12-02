@@ -7,14 +7,16 @@
     "python.terminal.activateEnvironment": false,
     "micropico.openOnStart": true,
     "python.analysis.typeshedPaths": [
-        "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1"
+        "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1",
+        "~/.micropico-stubs/included"
     ],
     "python.analysis.extraPaths": [
-        "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1"
+        "~/.micropico-stubs/micropython-esp32-stubs==1.26.0.post1",
+        "~/.micropico-stubs/included"
     ],
     "python-envs.pythonProjects": [],
     "micropico.autoConnect": false,
-    "micropico.manualComDevice": "/dev/ttyUSB0",
+    "micropico.manualComDevice": "",
     "micropico.softResetAfterUpload": true,
     "terminal.integrated.defaultProfile.linux": "bash",
     "python-envs.defaultEnvManager": "ms-python.python:system",
@@ -25,5 +27,6 @@
     "spellright.documentTypes": [
         "markdown",
         "latex"
-    ]
+    ],
+    "wokwi.autoConnect": true
 }
