@@ -29,15 +29,18 @@ cs=[Candle(i) for i in mpins]
 
 async def go():
     print('in go')
-    for c in cs:
-        print('calling on',c)
-        c.on()
-        print('done on',c)
-        await asyncio.sleep(1)
-    for c in cs:
-        c.off()
-        await asyncio.sleep(1)
-    #while True:
+    while True:
+        for i,c in enumerate(cs):
+            print('calling on',i)
+            c.on()
+            print('done on',i)
+            await asyncio.sleep(1)
+        for i,c in enumerate(cs):
+            print('calling off',i)
+            c.off()
+            print('done off',i)
+            await asyncio.sleep(1)
+        #while True:
     #    print('yield forever')
     #    await asyncio.sleep(0)
 
