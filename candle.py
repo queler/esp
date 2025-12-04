@@ -2,14 +2,17 @@
 import uasyncio as asyncio
 import random
 from machine import Pin, PWM
-
+import machine
 
 class Candle:
     MAX = 65535
 
     def __init__(self, pin, width=80, freq=5000):
         self.pin = pin
-        self.width = width
+        if machine.unique_id()==b'$\n\xc4\x00\x01\x10':
+            self.width=50
+        else:
+            self.width = width
 
         self.current_duty = 0
         self.task = None
