@@ -21,7 +21,7 @@ class ModeManager:
             if not self._time.is_valid():
                 if self._status:
                     self._status.set_error("time_invalid")
-                # Maybe tell menorah to go into an "error idle" mode
+                # Fall back to some safe mode if time invalid
                 self._menorah.set_mode(MODE_DEFAULT, night=None)
                 await asyncio.sleep(config.MODE_POLL_INTERVAL)
                 continue
@@ -33,22 +33,19 @@ class ModeManager:
             ymd = (y, m, d)
             ymd_hms = (y, m, d, hh, mm, ss)
 
-            is_h = self._schedule.is_today_hanukkah(ymd)
-            if not is_h:
-                # Outside Hanukkah: default mode only
-                self._menorah.set_mode(MODE_DEFAULT, night=None)
-                await asyncio.sleep(config.MODE_POLL_INTERVAL)
-                continue
-
-            night = self._schedule.get_night(ymd)
             window = self._schedule.get_window(ymd_hms)
 
-            if window == WINDOW_LIT:
-                self._menorah.set_mode(MODE_HANUKKAH_LIT, night=night)
-            elif window == WINDOW_DARK:
-                self._menorah.set_mode(MODE_HANUKKAH_DARK, night=night)
+            if window == WINDOW_NONE:
+                # Not a Hanukkah date at all
+                self._menorah.set_mode(MODE_DEFAULT, night=None)
             else:
-                # Should not happen, but treat as dark Hanukkah
-                self._menorah.set_mode(MODE_HANUKKAH_DARK, night=night)
+                night = self._schedule.get_night(ymd)
+                if window == WINDOW_LIT:
+                    self._menorah.set_mode(MODE_HANUKKAH_LIT, night=night)
+                elif window == WINDOW_DARK:
+                    self._menorah.set_mode(MODE_HANUKKAH_DARK, night=night)
+                else:
+                    # belt-and-suspenders
+                    self._menorah.set_mode(MODE_HANUKKAH_DARK, night=night)
 
             await asyncio.sleep(config.MODE_POLL_INTERVAL)
