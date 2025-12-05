@@ -36,7 +36,16 @@ class ScheduleManager:
         night, start_min, end_min = entry
         minutes = hh * 60 + mm
 
-        if start_min <= minutes < end_min:
-            return WINDOW_LIT
+        if start_min <= end_min:
+            # Simple case: window stays within the same day
+            if start_min <= minutes < end_min:
+                return WINDOW_LIT
+            else:
+                return WINDOW_DARK
         else:
-            return WINDOW_DARK
+            # Wrap-around: starts in the afternoon/evening, ends next morning.
+            # Lit if time is after start OR before end.
+            if minutes >= start_min or minutes < end_min:
+                return WINDOW_LIT
+            else:
+                return WINDOW_DARK

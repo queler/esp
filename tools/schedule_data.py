@@ -2,9 +2,6 @@
 # Format: (year, month, day, night, start_minutes, end_minutes)
 
 SCHEDULE = [
-    # Example entries only:
-    # (2025, 12, 24, 1, 16*60 + 20, 7*60 + 30),
-    # (2025, 12, 25, 2, 16*60 + 20, 7*60 + 30),
     (2025, 1, 1, 8, 956, 506),
     (2025, 12, 14, 1, 946, 499),
     (2025, 12, 15, 2, 946, 499),

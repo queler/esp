@@ -59,11 +59,13 @@ def find_hanukkah_nights_for_year(greg_year, tz, location):
         h_day_start = 25
 
         # Compute Gregorian date for first night, then add nights
-        g_year_start, g_month_start, g_day_start = hebrew.to_gregorian(hy, h_month, h_day_start)
+        g_year_start, g_month_start, g_day_start = hebrew.to_gregorian(
+            hy, h_month, h_day_start)
 
-        # First night is that Gregorian date at evening → but we’ll treat it as “that calendar date”
-        first_night_date = date(g_year_start, g_month_start, g_day_start)
-
+        # convertdate gives the civil **daytime** date of 25 Kislev.
+        # But we light the first candle the *previous* civil evening.
+        first_day_date = date(g_year_start, g_month_start, g_day_start)
+        first_night_date = first_day_date - timedelta(days=1)
         for night in range(8):
             current_date = first_night_date + timedelta(days=night)
             if current_date.year != greg_year:
@@ -74,7 +76,8 @@ def find_hanukkah_nights_for_year(greg_year, tz, location):
             s = sun(location.observer, date=current_date, tzinfo=tz)
 
             local_sunset = s["sunset"]
-            local_sunrise = s["sunrise"]  # the *next* sunrise is technically next morning
+            # the *next* sunrise is technically next morning
+            local_sunrise = s["sunrise"]
 
             # Compute start = sunset - OFFSET_BEFORE_SUNSET
             start_dt = local_sunset - timedelta(minutes=OFFSET_BEFORE_SUNSET)
