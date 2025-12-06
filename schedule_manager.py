@@ -8,7 +8,7 @@ WINDOW_DARK = "dark"
 
 
 class ScheduleManager:
-    def __init__(self, entries):
+    def __init__(self, entries=SCHEDULE):
         # Map (Y, M, D) -> (night, start_min, end_min)
         self._by_date = {}
         for (y, m, d, night, start_min, end_min) in entries:
@@ -31,6 +31,7 @@ class ScheduleManager:
     def get_window(self, ymd_hms):
         """
         ymd_hms: (Y, M, D, h, m, s)
+
         Returns:
             WINDOW_NONE  -> not a Hanukkah date
             WINDOW_LIT   -> within lighting window
@@ -44,18 +45,15 @@ class ScheduleManager:
         night, start_min, end_min = entry
         minutes = hh * 60 + mm
 
-        # TWO CASES:
         # 1) Non-wrap window: start <= end (all on same civil day)
-        #    Lit if start <= minutes < end.
-        # 2) Wrap-around window: start > end (evening -> next morning)
-        #    Lit if minutes >= start OR minutes < end.
+        # 2) Wrap window: start > end (evening -> next morning)
         if start_min <= end_min:
             if start_min <= minutes < end_min:
                 return WINDOW_LIT
             else:
                 return WINDOW_DARK
         else:
-            # Wrap-around: like [start..24:00) U [0..end)
+            # Wrap-around: lit if time is after start OR before end.
             if minutes >= start_min or minutes < end_min:
                 return WINDOW_LIT
             else:

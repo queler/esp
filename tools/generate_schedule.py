@@ -6,7 +6,7 @@ Requires:
     pip install astral convertdate pytz
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from convertdate import hebrew
 from astral import LocationInfo
 from astral.sun import sun
@@ -15,23 +15,21 @@ import pytz
 
 # === CONFIG ===
 
-# Location & timezone
 CITY_NAME = "YourCity"
 REGION_NAME = "YourRegion"
-LATITUDE = 38.9      # example: DC-ish
+LATITUDE = 38.9            # adjust to your location
 LONGITUDE = -77.0
 TIMEZONE_NAME = "America/New_York"
 
-# How many years to generate (starting from START_YEAR)
 START_YEAR = 2025
 NUM_YEARS = 20
 
-# Lighting window offsets (relative to local sunset/sunrise)
 # In minutes
 OFFSET_BEFORE_SUNSET = 60    # start this many minutes before sunset
 OFFSET_AFTER_SUNRISE = 60    # end this many minutes after sunrise
 
-OUTPUT_FILE = "schedule_data.py"
+# Write into the firmware root
+OUTPUT_FILE = "../schedule_data.py"
 
 
 # === HELPER FUNCTIONS ===
@@ -46,72 +44,52 @@ def find_hanukkah_nights_for_year(greg_year, tz, location):
     """
     entries = []
 
-    # Hanukkah starts 25 Kislev, runs 8 nights: 25–2/3 Tevet.
-    # We need the Hebrew year corresponding to some date in this Gregorian year.
-    # A simple way: convert Jan 1 of this year to Hebrew to get the Hebrew year.
+    # Determine Hebrew year corresponding to Jan 1 of this greg year
     h_year, _, _ = hebrew.from_gregorian(greg_year, 1, 1)
 
-    # For safety, we’ll check both this Hebrew year and the next, because
-    # depending on where Hanukkah falls, part may be in greg_year-1 or greg_year+1.
+    # Check nearby Hebrew years in case of cross-year boundaries
     for hy in (h_year - 1, h_year, h_year + 1):
-        # 25 Kislev
         h_month = hebrew.KISLEV
         h_day_start = 25
 
-        # Compute Gregorian date for first night, then add nights
+        # convertdate returns the civil *daytime* date of 25 Kislev.
         g_year_start, g_month_start, g_day_start = hebrew.to_gregorian(
             hy, h_month, h_day_start)
+        daytime_25_kislev = date(g_year_start, g_month_start, g_day_start)
 
-        # convertdate gives the civil **daytime** date of 25 Kislev.
-        # But we light the first candle the *previous* civil evening.
-        first_day_date = date(g_year_start, g_month_start, g_day_start)
-        first_night_date = first_day_date - timedelta(days=1)
+        # We actually light the first candle the *previous* civil evening.
+        first_night_date = daytime_25_kislev - timedelta(days=1)
+
         for night in range(8):
             current_date = first_night_date + timedelta(days=night)
             if current_date.year != greg_year:
-                # We only want entries whose *calendar date* is in greg_year
                 continue
 
-            # Compute sunrise/sunset at this location on this date
             s = sun(location.observer, date=current_date, tzinfo=tz)
-
             local_sunset = s["sunset"]
-            # the *next* sunrise is technically next morning
             local_sunrise = s["sunrise"]
 
-            # Compute start = sunset - OFFSET_BEFORE_SUNSET
-            start_dt = local_sunset - timedelta(minutes=OFFSET_BEFORE_SUNSET)
-
-            # Compute end = sunrise + OFFSET_AFTER_SUNRISE (next morning)
-            # If sunrise is before sunset (same day), we want the following day’s sunrise
+            # If sunrise is earlier than sunset, use the next day's sunrise
             if local_sunrise < local_sunset:
                 local_sunrise = local_sunrise + timedelta(days=1)
+
+            start_dt = local_sunset - timedelta(minutes=OFFSET_BEFORE_SUNSET)
             end_dt = local_sunrise + timedelta(minutes=OFFSET_AFTER_SUNRISE)
 
-            # Store times in minutes since midnight of the *calendar date* of current_date
-            # We assume start_dt is on current_date or very close.
             start_minutes = start_dt.hour * 60 + start_dt.minute
-            # end is after midnight → we’ll wrap into [0, 24*60*2) if needed.
-            # For simplicity on the ESP, we can cap to 24:00 of next day or keep raw.
-            # But earlier plan assumed we just compare same-day minutes.
-            # For now, we’ll clamp end to 23:59 of current_date+1,
-            # and on ESP treat “>= start or < end_if_next_day” as lit.
-            # To keep it simple, we can instead treat window as same-day only,
-            # assuming end stays before midnight; but let's keep basic same-day for now:
-
             end_minutes = end_dt.hour * 60 + end_dt.minute
 
             entries.append((
                 current_date.year,
                 current_date.month,
                 current_date.day,
-                night + 1,        # night number 1..8
+                night + 1,
                 start_minutes,
                 end_minutes,
             ))
 
-    # Deduplicate and sort by date then night
-    entries = list({(y, m, d, n, s, e) for (y, m, d, n, s, e) in entries})
+    # Deduplicate and sort
+    entries = list({e for e in entries})
     entries.sort()
     return entries
 
@@ -129,14 +107,11 @@ def main():
     all_entries = []
 
     for year in range(START_YEAR, START_YEAR + NUM_YEARS):
-        year_entries = find_hanukkah_nights_for_year(year, tz, location)
-        all_entries.extend(year_entries)
+        all_entries.extend(find_hanukkah_nights_for_year(year, tz, location))
 
-    # Deduplicate again across years, just in case
     all_entries = list({e for e in all_entries})
     all_entries.sort()
 
-    # Write schedule_data.py
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write("# Auto-generated Hanukkah schedule data\n")
         f.write("# Format: (year, month, day, night, start_minutes, end_minutes)\n\n")

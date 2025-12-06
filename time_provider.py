@@ -1,7 +1,6 @@
 # time_provider.py
 
 import utime
-import machine
 
 try:
     import ntptime
@@ -30,15 +29,21 @@ class NTPTimeProvider(BaseTimeProvider):
         self._valid = False
 
     async def init(self, status_manager=None):
-        # status_manager is optional; if provided, set/clear errors there.
-        # Non-blocking-ish: but ntptime is blocking, so we just call it once or twice.
+        """
+        Initialize time from NTP.
+        status_manager is optional; if provided, we set/clear NTP errors there.
+
+        Note: ntptime.settime() is blocking; we just call it a few times.
+        """
+        from status_manager import ERR_NTP_MISSING, ERR_NTP_FAIL  # late import to avoid cycles
+
         if ntptime is None:
             if status_manager:
-                status_manager.set_error("ntp_missing")
+                status_manager.set_error(ERR_NTP_MISSING)
             return
 
         if status_manager:
-            status_manager.clear_error("ntp_missing")
+            status_manager.clear_error(ERR_NTP_MISSING)
 
         try:
             ntptime.host = self._host
@@ -46,26 +51,28 @@ class NTPTimeProvider(BaseTimeProvider):
             # Some ports may not allow assigning host; ignore.
             pass
 
+        import uasyncio as asyncio
+
         tries = 3
         for _ in range(tries):
             try:
                 ntptime.settime()
                 self._valid = True
                 if status_manager:
-                    status_manager.clear_error("ntp_fail")
+                    status_manager.clear_error(ERR_NTP_FAIL)
                 break
             except Exception:
                 if status_manager:
-                    status_manager.set_error("ntp_fail")
+                    status_manager.set_error(ERR_NTP_FAIL)
             # tiny delay between attempts
-            await _sleep_ms(200)
-
-        # If valid, we might want to apply time zone offset at read time.
-
+            await asyncio.sleep_ms(200)
 
     def get_time(self):
-        # utime.localtime() returns (Y, M, D, h, m, s, weekday, yearday)
-        t = utime.localtime()
+        """
+        Return current local time as (Y, M, D, h, m, s),
+        applying the configured TZ offset in minutes.
+        """
+        t = utime.localtime()  # (Y,M,D,h,m,s,wd,yd)
         if self._tz_offset:
             # convert to seconds, offset, back to tuple
             secs = utime.mktime(t[:6] + (0, 0)) + self._tz_offset * 60
@@ -73,26 +80,35 @@ class NTPTimeProvider(BaseTimeProvider):
         return t[:6]
 
     def is_valid(self):
-        # Also sanity-check year so we don't treat 2000-01-01 as valid.
+        """
+        Treat time as valid if we've successfully synced and the year is sane.
+        """
+        if not self._valid:
+            return False
         y, m, d, hh, mm, ss = self.get_time()
-        return self._valid and (y >= 2024)
+        return y >= 2024
 
 
 class DebugTimeProvider(BaseTimeProvider):
+    """
+    Simulated time provider for development.
+
+    - start_tuple: base simulated time (Y,M,D,h,m,s)
+    - speed: simulated seconds per real second (e.g. 3600 => 1h/s)
+    """
+
     def __init__(self, start_tuple=(2025, 1, 1, 18, 0, 0), speed=3600):
-        """
-        start_tuple: starting simulated time (Y,M,D,h,m,s)
-        speed: how many simulated seconds per real second (e.g. 3600 => 1h/s).
-        """
         self._base_epoch = _mktime_safe(start_tuple)
         self._base_real = utime.time()
         self._speed = speed
         self._valid = True
 
     async def init(self, status_manager=None):
-        # In debug we consider time always "valid"
+        from status_manager import ERR_TIME_INVALID
+        # In debug we consider time always "valid".
+        self._valid = True
         if status_manager:
-            status_manager.clear_error("time_invalid")
+            status_manager.clear_error(ERR_TIME_INVALID)
 
     def get_time(self):
         now_real = utime.time()
@@ -104,7 +120,7 @@ class DebugTimeProvider(BaseTimeProvider):
     def is_valid(self):
         return self._valid
 
-    # Optional REPL helpers:
+    # REPL helpers:
     def set_time(self, y, m, d, hh, mm, ss):
         self._base_epoch = _mktime_safe((y, m, d, hh, mm, ss))
         self._base_real = utime.time()
@@ -124,9 +140,3 @@ def _mktime_safe(t6):
     except Exception:
         # fallback
         return 0
-
-
-async def _sleep_ms(ms):
-    # Small helper to avoid importing uasyncio at top-level if you don't want to.
-    import uasyncio as asyncio
-    await asyncio.sleep_ms(ms)

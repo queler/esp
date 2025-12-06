@@ -17,17 +17,19 @@ class ModeManager:
         self._status = status_manager
 
     async def run(self):
+        from status_manager import ERR_TIME_INVALID  # late import
+
         while True:
             if not self._time.is_valid():
                 if self._status:
-                    self._status.set_error("time_invalid")
-                # Fall back to some safe mode if time invalid
+                    self._status.set_error(ERR_TIME_INVALID)
+                # Without valid time, safest is a neutral/default mode
                 self._menorah.set_mode(MODE_DEFAULT, night=None)
                 await asyncio.sleep(config.MODE_POLL_INTERVAL)
                 continue
             else:
                 if self._status:
-                    self._status.clear_error("time_invalid")
+                    self._status.clear_error(ERR_TIME_INVALID)
 
             y, m, d, hh, mm, ss = self._time.get_time()
             ymd = (y, m, d)
