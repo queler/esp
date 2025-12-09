@@ -13,13 +13,11 @@ class MenorahController:
       If None, defaults to the center candle.
     """
 
-    def __init__(self, candles, shamash_index=None):
+    def __init__(self, candles, shamash_index=0):
         self._candles = list(candles)
         if not self._candles:
             raise ValueError("MenorahController requires at least one candle")
 
-        if shamash_index is None:
-            shamash_index = len(self._candles) // 2
         self._shamash_index = shamash_index
 
         self._mode = MODE_DEFAULT

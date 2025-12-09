@@ -53,7 +53,7 @@ async def main():
 
     # --- Candles & Menorah ---
     candles = [Candle(pin) for pin in MPINS]
-    menorah = MenorahController(candles, shamash_index=None)
+    menorah = MenorahController(candles, shamash_index=0)
 
     # --- Mode manager ---
     mode_mgr = ModeManager(time_provider, schedule_mgr, menorah, status)
