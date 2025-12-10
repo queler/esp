@@ -13,11 +13,18 @@ class ModeManager:
 
         self._last_state = None
 
+        # --- NEW: self-test flag ---
+        self._self_test_running = False
+
     async def run(self):
         from status_manager import ERR_TIME_INVALID  # late import
 
         while True:
-            # Time validity
+            # If self-test is active, skip normal schedule logic.
+            if self._self_test_running:
+                await asyncio.sleep(config.MODE_POLL_INTERVAL)
+                continue
+
             if not self._time.is_valid():
                 if self._status:
                     self._status.set_error(ERR_TIME_INVALID)
@@ -43,7 +50,7 @@ class ModeManager:
         if state == self._last_state:
             return
 
-        # Timestamp for logging
+        # Timestamp for logging (may be dummy during early boot)
         try:
             y, m, d, hh, mm, ss = self._time.get_time()
         except Exception:
@@ -57,9 +64,42 @@ class ModeManager:
         if (self._last_state is None or self._last_state <= 0) and state > 0:
             print("[CANDLES] ON  at %s (night %s)" % (ts, str(state)))
         if self._last_state is not None and self._last_state > 0 and state <= 0:
-            print("[CANDLES] OFF at %s (end of night %s)" % (ts, str(self._last_state)))
+            print("[CANDLES] OFF at %s (prev night %s)" % (ts, str(self._last_state)))
 
         self._last_state = state
 
         # Push to hardware
         self._menorah.set_state(state)
+
+    # --- NEW: self-test API -----------------------------
+
+    def start_self_test(self, delay_s=2):
+        """
+        Start a self-test sequence in the background:
+
+            state = -1, 0, 1, 2, 3, 4, 5, 6, 7, 8
+
+        Each held for delay_s seconds.
+
+        Call this from REPL as:
+
+            MODE_MANAGER.start_self_test()
+        """
+        if self._self_test_running:
+            print("Self-test already running")
+            return
+
+        self._self_test_running = True
+        asyncio.create_task(self._self_test_task(delay_s))
+
+    async def _self_test_task(self, delay_s):
+        print("=== Starting menorah self-test ===")
+        sequence = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+        for state in sequence:
+            print("SELF-TEST: setting state =", state)
+            self._set_state_with_trace(state)
+            await asyncio.sleep(delay_s)
+
+        print("=== Self-test complete ===")
+        self._self_test_running = False

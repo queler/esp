@@ -22,7 +22,7 @@ IGNORE_PATTERNS = [
 
 # Extra non-.py files you still want to sync
 EXTRA_FILES = [
-    "wifi.json",
+    #"wifi.json",
 ]
 
 # Whether to create a new Wokwi file if the tab doesn't exist yet
