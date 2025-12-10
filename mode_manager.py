@@ -2,11 +2,6 @@
 
 import uasyncio as asyncio
 import config
-from schedule_manager import WINDOW_NONE, WINDOW_LIT, WINDOW_DARK
-from time_provider import DebugTimeProvider
-MODE_HANUKKAH_LIT = 1
-MODE_HANUKKAH_DARK = 2
-MODE_DEFAULT = 3
 
 
 class ModeManager:
@@ -16,42 +11,55 @@ class ModeManager:
         self._menorah = menorah
         self._status = status_manager
 
+        self._last_state = None
+
     async def run(self):
         from status_manager import ERR_TIME_INVALID  # late import
 
         while True:
+            # Time validity
             if not self._time.is_valid():
                 if self._status:
                     self._status.set_error(ERR_TIME_INVALID)
-                # Without valid time, safest is a neutral/default mode
-                self._menorah.set_mode(MODE_DEFAULT, night=None)
-                await asyncio.sleep(config.MODE_POLL_INTERVAL)
-                continue
+                effective_state = -1  # act like "outside Hanukkah"
             else:
                 if self._status:
                     self._status.clear_error(ERR_TIME_INVALID)
+                y, m, d, hh, mm, ss = self._time.get_time()
+                effective_state = self._schedule.get_state((y, m, d, hh, mm, ss))
 
+            self._set_state_with_trace(effective_state)
+            await asyncio.sleep(config.MODE_POLL_INTERVAL)
+
+    def _set_state_with_trace(self, state: int):
+        """
+        Apply state to MenorahController and print transitions.
+
+        state:
+          -1  outside Hanukkah (default)
+           0  Hanukkah daytime (off)
+          1-8 Hanukkah nights
+        """
+        if state == self._last_state:
+            return
+
+        # Timestamp for logging
+        try:
             y, m, d, hh, mm, ss = self._time.get_time()
-            ymd = (y, m, d)
-            ymd_hms = (y, m, d, hh, mm, ss)
+        except Exception:
+            y, m, d, hh, mm, ss = (0, 0, 0, 0, 0, 0)
 
-            window = self._schedule.get_window(ymd_hms)
+        ts = "%04d-%02d-%02d %02d:%02d:%02d" % (y, m, d, hh, mm, ss)
 
-            if window == WINDOW_NONE:
-                # Not a Hanukkah date at all
-                self._menorah.set_mode(MODE_DEFAULT, night=None)
-            else:
-                night = self._schedule.get_night(ymd)
-                if window == WINDOW_LIT:
-                    self._menorah.set_mode(MODE_HANUKKAH_LIT, night=night)
-                elif window == WINDOW_DARK:
-                    self._menorah.set_mode(MODE_HANUKKAH_DARK, night=night)
-                else:
-                    # belt-and-suspenders
-                    self._menorah.set_mode(MODE_HANUKKAH_DARK, night=night)
-            if isinstance(self._time,DebugTimeProvider):
-                await asyncio.sleep(
-                    config.MODE_POLL_INTERVAL / self._time._speed   # in simulated seconds
-                                    )
-            else:
-                await asyncio.sleep(config.MODE_POLL_INTERVAL)
+        print("[MODE] %s state=%s" % (ts, str(state)))
+
+        # Candle on/off markers:
+        if (self._last_state is None or self._last_state <= 0) and state > 0:
+            print("[CANDLES] ON  at %s (night %s)" % (ts, str(state)))
+        if self._last_state is not None and self._last_state > 0 and state <= 0:
+            print("[CANDLES] OFF at %s (prev night %s)" % (ts, str(self._last_state)))
+
+        self._last_state = state
+
+        # Push to hardware
+        self._menorah.set_state(state)

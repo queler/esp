@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate schedule_data.py for the ESP Menorah.
+Generate schedule_events.py for the ESP Menorah.
 
 Requires:
     pip install astral convertdate pytz
@@ -15,83 +15,107 @@ import pytz
 
 # === CONFIG ===
 
-CITY_NAME = "YourCity"
-REGION_NAME = "YourRegion"
+CITY_NAME = "Falls Church"
+REGION_NAME = "Virginia"
 LATITUDE = 38.9            # adjust to your location
 LONGITUDE = -77.0
 TIMEZONE_NAME = "America/New_York"
 
-START_YEAR = 2025
-NUM_YEARS = 20
+H_START_YEAR = 5786
+NUM_YEARS = 50
 
-# In minutes
-OFFSET_BEFORE_SUNSET = 60    # start this many minutes before sunset
-OFFSET_AFTER_SUNRISE = 60    # end this many minutes after sunrise
+OFFSET_BEFORE_SUNSET = 60    # minutes before sunset to start
+OFFSET_AFTER_SUNRISE = 60    # minutes after sunrise to end
 
-# Write into the firmware root
-OUTPUT_FILE = "../schedule_data.py"
+OUTPUT_FILE = "../schedule_events.py"
 
 
-# === HELPER FUNCTIONS ===
+# === HELPERS ===
 
-def find_hanukkah_nights_for_year(greg_year, tz, location):
+def find_hanukkah_events_for_year(hy, tz, location):
     """
-    Return a list of entries for all 8 nights of Hanukkah that
-    touch greg_year (some nights might be in the neighboring greg year).
+    Return a list of EVENTS for all 8 nights that touch greg_year.
 
-    Each entry is:
-        (year, month, day, night_number, start_minutes, end_minutes)
+    Each event is:
+        (year, month, day, hour, minute, state)
+
+    state:
+        1..8  = Hanukkah night N (candles ON)
+        0     = Hanukkah daytime (candles OFF)
     """
-    entries = []
+    events = []
 
-    # Determine Hebrew year corresponding to Jan 1 of this greg year
-    h_year, _, _ = hebrew.from_gregorian(greg_year, 1, 1)
+    # Hebrew year corresponding to Jan 1 of this greg year
+    #h_year, _, _ = hebrew.from_gregorian(greg_year, 1, 1)
 
-    # Check nearby Hebrew years in case of cross-year boundaries
-    for hy in (h_year - 1, h_year, h_year + 1):
-        h_month = hebrew.KISLEV
-        h_day_start = 25
+    #for hy in (h_year - 1, h_year, h_year + 1):
+    # 25 Kislev of this Hebrew year
+    h_month = hebrew.KISLEV
+    h_day_start = 25
 
-        # convertdate returns the civil *daytime* date of 25 Kislev.
-        g_year_start, g_month_start, g_day_start = hebrew.to_gregorian(
-            hy, h_month, h_day_start)
-        daytime_25_kislev = date(g_year_start, g_month_start, g_day_start)
+    g_year_start, g_month_start, g_day_start = hebrew.to_gregorian(
+        hy, h_month, h_day_start
+    )
+    daytime_25_kislev = date(g_year_start, g_month_start, g_day_start)
 
-        # We actually light the first candle the *previous* civil evening.
-        first_night_date = daytime_25_kislev - timedelta(days=1)
+    # First lighting night is the civil evening *before* 25 Kislev
+    first_night_date = daytime_25_kislev - timedelta(days=1)
+    suns={} 
+    for night in range(9):
+        lighting_date = first_night_date + timedelta(days=night)
+        suns[lighting_date]=sun(location.observer, date=lighting_date, tzinfo=tz)
 
-        for night in range(8):
-            current_date = first_night_date + timedelta(days=night)
-            if current_date.year != greg_year:
-                continue
+    for night in range(8):
+        lighting_date = first_night_date + timedelta(days=night)
+        next_morning_date = lighting_date + timedelta(days=1)
+        
+        # Compute sunset & sunrise for the lighting date
+        #s = sun(location.observer, date=lighting_date, tzinfo=tz)
+        local_sunset = suns[lighting_date]["sunset"]
+        local_sunrise = suns[next_morning_date]["sunrise"]
 
-            s = sun(location.observer, date=current_date, tzinfo=tz)
-            local_sunset = s["sunset"]
-            local_sunrise = s["sunrise"]
+        # Ensure sunrise is the *next morning*, not earlier the same day
+        if local_sunrise < local_sunset:
+            raise ValueError("Sunrise is before sunset")
+            local_sunrise = local_sunrise + timedelta(days=1)
 
-            # If sunrise is earlier than sunset, use the next day's sunrise
-            if local_sunrise < local_sunset:
-                local_sunrise = local_sunrise + timedelta(days=1)
+        start_dt = local_sunset - timedelta(minutes=OFFSET_BEFORE_SUNSET)
+        end_dt = local_sunrise + timedelta(minutes=OFFSET_AFTER_SUNRISE)
 
-            start_dt = local_sunset - timedelta(minutes=OFFSET_BEFORE_SUNSET)
-            end_dt = local_sunrise + timedelta(minutes=OFFSET_AFTER_SUNRISE)
+        # Event: candles ON for this night
+        events.append((
+            start_dt.year,
+            start_dt.month,
+            start_dt.day,
+            start_dt.hour,
+            start_dt.minute,
+            night + 1,   # night number 1..8
+        ))
 
-            start_minutes = start_dt.hour * 60 + start_dt.minute
-            end_minutes = end_dt.hour * 60 + end_dt.minute
-
-            entries.append((
-                current_date.year,
-                current_date.month,
-                current_date.day,
-                night + 1,
-                start_minutes,
-                end_minutes,
-            ))
-
-    # Deduplicate and sort
-    entries = list({e for e in entries})
-    entries.sort()
-    return entries
+        # Event: Hanukkah daytime (candles OFF) after this night
+        events.append((
+            end_dt.year,
+            end_dt.month,
+            end_dt.day,
+            end_dt.hour,
+            end_dt.minute,
+            0,           # Hanukkah daytime / candles off
+        ))
+    end_of_last_night = first_night_date + timedelta(days=8)
+    last_night_sunset=suns[end_of_last_night]["sunset"]
+    end_holiday_dt = last_night_sunset + timedelta(minutes=OFFSET_BEFORE_SUNSET)
+    events.append((
+        end_holiday_dt.year, 
+        end_holiday_dt.month,
+        end_holiday_dt.day,
+        end_holiday_dt.hour,
+        end_holiday_dt.minute,
+        -1,          # End of Hanukkah
+    ))
+    # Deduplicate & sort
+    events = list({e for e in events})
+    events.sort(key=lambda e: (e[0], e[1], e[2], e[3], e[4]))
+    return events
 
 
 def main():
@@ -104,23 +128,25 @@ def main():
         longitude=LONGITUDE,
     )
 
-    all_entries = []
+    all_events = []
 
-    for year in range(START_YEAR, START_YEAR + NUM_YEARS):
-        all_entries.extend(find_hanukkah_nights_for_year(year, tz, location))
+    for year in range(H_START_YEAR, H_START_YEAR + NUM_YEARS):
+        all_events.extend(find_hanukkah_events_for_year(year, tz, location))
 
-    all_entries = list({e for e in all_entries})
-    all_entries.sort()
+    # Deduplicate & sort across all years
+    all_events = list({e for e in all_events})
+    all_events.sort(key=lambda e: (e[0], e[1], e[2], e[3], e[4]))
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write("# Auto-generated Hanukkah schedule data\n")
-        f.write("# Format: (year, month, day, night, start_minutes, end_minutes)\n\n")
-        f.write("SCHEDULE = [\n")
-        for (y, m, d, night, start_min, end_min) in all_entries:
-            f.write(f"    ({y}, {m}, {d}, {night}, {start_min}, {end_min}),\n")
+        f.write("# Auto-generated Hanukkah schedule events\n")
+        f.write("# Each entry: (year, month, day, hour, minute, state)\n")
+        f.write("# state: -1 = outside Hanukkah (implicit), 0 = Hanukkah daytime, 1..8 = night\n\n")
+        f.write("EVENTS = [\n")
+        for (y, m, d, hh, mm, state) in all_events:
+            f.write(f"    ({y}, {m}, {d}, {hh}, {mm}, {state}),\n")
         f.write("]\n")
 
-    print(f"Wrote {len(all_entries)} entries to {OUTPUT_FILE}")
+    print(f"Wrote {len(all_events)} events to {OUTPUT_FILE}")
 
 
 if __name__ == "__main__":

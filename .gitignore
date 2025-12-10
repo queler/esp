@@ -1,3 +1,5 @@
 venv
 typings
 chat279e0.patch
+__pycache__
+wifi.json

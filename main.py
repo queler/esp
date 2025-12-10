@@ -6,40 +6,38 @@ import config
 from wifi_manager import WiFiManager
 from candle import Candle
 from menorah import MenorahController
-
 from time_provider import NTPTimeProvider, DebugTimeProvider
-from schedule_data import SCHEDULE
+from schedule_events import EVENTS
 from schedule_manager import ScheduleManager
 from mode_manager import ModeManager
-from status_manager import StatusManager, ERR_WIFI
-
+from status_manager import StatusManager, ERR_WIFI, ERR_SCHEDULE
 import aiorepl
 
-
-# # Physical wiring: these came from your old main.py
-# PINS = [32, 25, 27, 12, 13, 23, 21, 19, 4]
-# TRANSORDER = [0, 8, 7, 6, 5, 1, 2, 3, 4]
-# MPINS = [PINS[i] for i in TRANSORDER]
-MPINS = [32, 4, 19, 21, 23, 25, 27, 12, 13]
-
-TIME_PROVIDER = None
-MODE_MANAGER = None
+# Globals for REPL
+TP = None
+MM = None
 MENORAH = None
 STATUS = None
 
+PINS = [32, 25, 27, 12, 13, 23, 21, 19, 4]
+TRANSORDER = [0, 8, 7, 6, 5, 1, 2, 3, 4]
+MPINS = [PINS[i] for i in TRANSORDER]
+
+
 async def main():
-    global TIME_PROVIDER, MODE_MANAGER, MENORAH, STATUS
+    global TP, MM, MENORAH, STATUS
+
     print("Menorah starting...")
 
     # --- WiFi ---
     wifi = WiFiManager()
     status = StatusManager(status_led=None, all_candles=None)
-
+    STATUS = status
     ok = await _wifi_init(wifi, status)
     if not ok:
-        print("WiFi connection failed (continuing anyway for debug).")
+        print("WiFi connection failed (continuing anyway).")
 
-    # --- Time Provider ---
+    # --- Time provider ---
     if config.USE_DEBUG_TIME:
         time_provider = DebugTimeProvider()
     else:
@@ -48,11 +46,11 @@ async def main():
             tz_offset_minutes=config.TIMEZONE_OFFSET_MINUTES,
         )
     await time_provider.init(status)
-    TIME_PROVIDER=time_provider
-    # --- Schedule ---
-    schedule_mgr = ScheduleManager(SCHEDULE)
-    from status_manager import ERR_SCHEDULE
-    if not SCHEDULE:
+    TP = time_provider
+
+    # --- Schedule (event-based) ---
+    schedule_mgr = ScheduleManager(EVENTS)
+    if not EVENTS:
         status.set_error(ERR_SCHEDULE)
     else:
         status.clear_error(ERR_SCHEDULE)
@@ -60,10 +58,12 @@ async def main():
     # --- Candles & Menorah ---
     candles = [Candle(pin) for pin in MPINS]
     menorah = MenorahController(candles, shamash_index=0)
-    MENORAH=menorah
+    MENORAH = menorah
+
     # --- Mode manager ---
     mode_mgr = ModeManager(time_provider, schedule_mgr, menorah, status)
-    MODE_MANAGER=mode_mgr
+    MM = mode_mgr
+
     print("Starting tasks...")
 
     tasks = []
