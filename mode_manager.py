@@ -57,7 +57,7 @@ class ModeManager:
         if (self._last_state is None or self._last_state <= 0) and state > 0:
             print("[CANDLES] ON  at %s (night %s)" % (ts, str(state)))
         if self._last_state is not None and self._last_state > 0 and state <= 0:
-            print("[CANDLES] OFF at %s (prev night %s)" % (ts, str(self._last_state)))
+            print("[CANDLES] OFF at %s (end of night %s)" % (ts, str(self._last_state)))
 
         self._last_state = state
 

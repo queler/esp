@@ -22,7 +22,7 @@ LONGITUDE = -77.0
 TIMEZONE_NAME = "America/New_York"
 
 H_START_YEAR = 5786
-NUM_YEARS = 50
+NUM_YEARS = 25
 
 OFFSET_BEFORE_SUNSET = 60    # minutes before sunset to start
 OFFSET_AFTER_SUNRISE = 60    # minutes after sunrise to end
