@@ -3,7 +3,7 @@
 import uasyncio as asyncio
 import config
 from schedule_manager import WINDOW_NONE, WINDOW_LIT, WINDOW_DARK
-
+from time_provider import DebugTimeProvider
 MODE_HANUKKAH_LIT = 1
 MODE_HANUKKAH_DARK = 2
 MODE_DEFAULT = 3
@@ -49,5 +49,9 @@ class ModeManager:
                 else:
                     # belt-and-suspenders
                     self._menorah.set_mode(MODE_HANUKKAH_DARK, night=night)
-
-            await asyncio.sleep(config.MODE_POLL_INTERVAL)
+            if isinstance(self._time,DebugTimeProvider):
+                await asyncio.sleep(
+                    config.MODE_POLL_INTERVAL / self._time._speed   # in simulated seconds
+                                    )
+            else:
+                await asyncio.sleep(config.MODE_POLL_INTERVAL)

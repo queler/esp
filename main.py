@@ -16,13 +16,19 @@ from status_manager import StatusManager, ERR_WIFI
 import aiorepl
 
 
-# Physical wiring: these came from your old main.py
-PINS = [32, 25, 27, 12, 13, 23, 21, 19, 4]
-TRANSORDER = [0, 8, 7, 6, 5, 1, 2, 3, 4]
-MPINS = [PINS[i] for i in TRANSORDER]
+# # Physical wiring: these came from your old main.py
+# PINS = [32, 25, 27, 12, 13, 23, 21, 19, 4]
+# TRANSORDER = [0, 8, 7, 6, 5, 1, 2, 3, 4]
+# MPINS = [PINS[i] for i in TRANSORDER]
+MPINS = [32, 4, 19, 21, 23, 25, 27, 12, 13]
 
+TIME_PROVIDER = None
+MODE_MANAGER = None
+MENORAH = None
+STATUS = None
 
 async def main():
+    global TIME_PROVIDER, MODE_MANAGER, MENORAH, STATUS
     print("Menorah starting...")
 
     # --- WiFi ---
@@ -42,7 +48,7 @@ async def main():
             tz_offset_minutes=config.TIMEZONE_OFFSET_MINUTES,
         )
     await time_provider.init(status)
-
+    TIME_PROVIDER=time_provider
     # --- Schedule ---
     schedule_mgr = ScheduleManager(SCHEDULE)
     from status_manager import ERR_SCHEDULE
@@ -54,10 +60,10 @@ async def main():
     # --- Candles & Menorah ---
     candles = [Candle(pin) for pin in MPINS]
     menorah = MenorahController(candles, shamash_index=0)
-
+    MENORAH=menorah
     # --- Mode manager ---
     mode_mgr = ModeManager(time_provider, schedule_mgr, menorah, status)
-
+    MODE_MANAGER=mode_mgr
     print("Starting tasks...")
 
     tasks = []
