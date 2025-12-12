@@ -18,10 +18,20 @@ TP = None
 MM = None
 MENORAH = None
 STATUS = None
-
+_test_pins = None
 PINS = [32, 25, 27, 12, 13, 23, 21, 19, 4]
 TRANSORDER = [0, 8, 7, 6, 5, 1, 2, 3, 4]
 MPINS = [PINS[i] for i in TRANSORDER]
+
+
+def straight_test():
+    from machine import Pin
+    global _test_pins
+    _test_pins = []
+    for pin in (MPINS):
+        _test_pins.append(Pin(pin, Pin.OUT))
+        _test_pins[-1].on()
+    return _test_pins
 
 
 async def main():
@@ -99,4 +109,5 @@ async def _wifi_init(wifi, status):
     return ok
 
 
-asyncio.run(main())
+# asyncio.run(main())
+straight_test()
