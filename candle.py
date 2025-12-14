@@ -17,7 +17,7 @@ class Candle:
         self.task = None
         self.enabled = False
 
-        self.led = PWM(Pin(pin), freq=freq)
+        self.led = PWM(Pin(pin,drive=Pin.DRIVE_3), freq=freq)
         self.led.duty_u16(0)
 
     async def _loop(self):
