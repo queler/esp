@@ -1,0 +1,8 @@
+astral==3.2
+convertdate==2.4.0
+greenlet==3.3.0
+playwright==1.56.0
+pyee==13.0.0
+PyMeeus==0.5.12
+pyperclip==1.11.0
+typing_extensions==4.15.0

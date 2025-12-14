@@ -1,61 +1,102 @@
+# main.py
+
 import uasyncio as asyncio
-from menorah import MenorahController
+import config
+
 from wifi_manager import WiFiManager
 from candle import Candle
-pins = [32, 25, 27, 12, 13, 23, 21, 19, 4]
-transorder=[0,8,7,6,5,1,2,3,4]
-mpins=[pins[i] for i in transorder]
-menorah = MenorahController(mpins,width=50)
-import _thread
-import uasyncio as asyncio
-# Connect to WiFi (or start config portal if no credentials)
-wm = WiFiManager()
-connected = False
-try:
-    connected = wm.connect()
-except Exception as e:
-    print('WiFi connect error:', e)
-
-if not connected:
-    # This will block and run a small AP + web form; after saving it reboots
-    print('No saved/available networks. Starting config portal...')
-    wm.start_config_portal()
-else:
-    print('WiFi connected — to check or re-run portal call: wm.start_config_portal()')
-# Start the menorah flickering
-#mip.install('aiorepl')
+from menorah import MenorahController
+from time_provider import NTPTimeProvider, DebugTimeProvider
+from schedule_events import EVENTS
+from schedule_manager import ScheduleManager
+from mode_manager import ModeManager
+from status_manager import StatusManager, ERR_WIFI, ERR_SCHEDULE
 import aiorepl
-cs=[Candle(i) for i in mpins]
 
-async def go():
-    print('in go')
-    while True:
-        for i,c in enumerate(cs):
-            print('calling on',i)
-            c.on()
-            print('done on',i)
-            await asyncio.sleep(1)
-        for i,c in enumerate(cs):
-            print('calling off',i)
-            c.off()
-            print('done off',i)
-            await asyncio.sleep(1)
-        #while True:
-    #    print('yield forever')
-    #    await asyncio.sleep(0)
+# Globals for REPL
+TP = None
+MM = None
+MENORAH = None
+STATUS = None
+
+PINS = [32, 25, 27, 12, 13, 23, 21, 19, 4]
+TRANSORDER = [0, 8, 7, 6, 5, 1, 2, 3, 4]
+MPINS = [PINS[i] for i in TRANSORDER]
+
 
 async def main():
+    global TP, MM, MENORAH, STATUS
+
+    print("Menorah starting...")
+
+    # --- WiFi ---
+    wifi = WiFiManager()
+    status = StatusManager(status_led=None, all_candles=None)
+    STATUS = status
+    ok = await _wifi_init(wifi, status)
+    if not ok:
+        print("WiFi connection failed (continuing anyway).")
+
+    # --- Time provider ---
+    if config.USE_DEBUG_TIME:
+        time_provider = DebugTimeProvider()
+    else:
+        time_provider = NTPTimeProvider(
+            host=config.NTP_HOST,
+            tz_offset_minutes=config.TIMEZONE_OFFSET_MINUTES,
+        )
+    await time_provider.init(status)
+    TP = time_provider
+
+    # --- Schedule (event-based) ---
+    schedule_mgr = ScheduleManager(EVENTS)
+    if not EVENTS:
+        status.set_error(ERR_SCHEDULE)
+    else:
+        status.clear_error(ERR_SCHEDULE)
+
+    # --- Candles & Menorah ---
+    candles = [Candle(pin) for pin in MPINS]
+    menorah = MenorahController(candles, shamash_index=0)
+    MENORAH = menorah
+
+    # --- Mode manager ---
+    mode_mgr = ModeManager(time_provider, schedule_mgr, menorah, status)
+    MM = mode_mgr
+
     print("Starting tasks...")
 
-    # Start other program tasks.
-    t1 = asyncio.create_task(go())
+    tasks = []
 
-    # Start the aiorepl task.
-    repl = asyncio.create_task(aiorepl.task())
+    # Menorah loop
+    tasks.append(asyncio.create_task(menorah.run()))
 
-    await asyncio.gather(t1, repl)
+    # Mode loop
+    tasks.append(asyncio.create_task(mode_mgr.run()))
+
+    # Status manager (currently no LEDs wired; harmless)
+    tasks.append(asyncio.create_task(status.run()))
+
+    # aiorepl for interactive debug (DEV_MODE only)
+    if config.DEV_MODE:
+        tasks.append(asyncio.create_task(aiorepl.task()))
+
+    print("All tasks started.")
+    await asyncio.Event().wait()
+
+
+async def _wifi_init(wifi, status):
+    try:
+        ok = wifi.connect()  # WiFiManager.connect is synchronous in your master
+    except Exception as e:
+        print("WiFi connect error:", e)
+        ok = False
+
+    if not ok:
+        status.set_error(ERR_WIFI)
+    else:
+        status.clear_error(ERR_WIFI)
+    return ok
+
 
 asyncio.run(main())
-
-
-

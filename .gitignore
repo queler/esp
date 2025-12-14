@@ -1,3 +1,5 @@
 venv
 wifi.json
 __pycache__
+typings
+chat279e0.patch
