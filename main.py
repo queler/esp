@@ -11,21 +11,21 @@ from schedule_events import EVENTS
 from schedule_manager import ScheduleManager
 from mode_manager import ModeManager
 from status_manager import StatusManager, ERR_WIFI, ERR_SCHEDULE
-import aiorepl
-
+#import aiorepl
+import repl_server
 # Globals for REPL
 TP = None
 MM = None
 MENORAH = None
 STATUS = None
-
+SCH_MGR = None
 PINS = [32, 25, 27, 12, 13, 23, 21, 19, 4]
 TRANSORDER = [0, 8, 7, 6, 5, 1, 2, 3, 4]
 MPINS = [PINS[i] for i in TRANSORDER]
 
 
 async def main():
-    global TP, MM, MENORAH, STATUS
+    global TP, MM, MENORAH, STATUS, SCH_MGR
 
     print("Menorah starting...")
 
@@ -63,7 +63,7 @@ async def main():
     # --- Mode manager ---
     mode_mgr = ModeManager(time_provider, schedule_mgr, menorah, status)
     MM = mode_mgr
-
+    SCH_MGR= schedule_mgr
     print("Starting tasks...")
 
     tasks = []
@@ -77,9 +77,21 @@ async def main():
     # Status manager (currently no LEDs wired; harmless)
     tasks.append(asyncio.create_task(status.run()))
 
-    # aiorepl for interactive debug (DEV_MODE only)
-    if config.DEV_MODE:
-        tasks.append(asyncio.create_task(aiorepl.task()))
+    # # aiorepl for interactive debug (DEV_MODE only)
+    # if config.DEV_MODE:
+    #     tasks.append(asyncio.create_task(aiorepl.task()))
+     # NEW: async TCP REPL server
+    repl_ns = {
+        # give the REPL access to useful stuff:
+        "asyncio": asyncio,
+        "config": config,
+        "TP": TP,
+        "SCH_MGR": SCH_MGR,
+        "MENORAH": MENORAH,
+        "MM_MANAGER": MM,
+        "STATUS": STATUS,
+    }
+    tasks.append(asyncio.create_task(repl_server.start_repl_server(repl_ns)))
 
     print("All tasks started.")
     await asyncio.Event().wait()
