@@ -4,11 +4,11 @@
 DEV_MODE = True
 
 # Time source selection
-USE_DEBUG_TIME = DEV_MODE  # In dev, use DebugTimeProvider; in prod, NTP
+USE_DEBUG_TIME = False #DEV_MODE  # In dev, use DebugTimeProvider; in prod, NTP
 
 # NTP settings
 NTP_HOST = "pool.ntp.org"
-TIMEZONE_OFFSET_MINUTES = 0  # adjust if you want local time
+TIMEZONE_OFFSET_MINUTES = -5*60  # adjust if you want local time
 
 # How often ModeManager should re-evaluate mode (seconds)
 MODE_POLL_INTERVAL = 1
