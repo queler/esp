@@ -12,7 +12,7 @@ from schedule_manager import ScheduleManager
 from mode_manager import ModeManager
 from status_manager import StatusManager, ERR_WIFI, ERR_SCHEDULE
 #import aiorepl
-import repl_server
+#import repl_server
 # Globals for REPL
 TP = None
 MM = None
@@ -76,22 +76,28 @@ async def main():
 
     # Status manager (currently no LEDs wired; harmless)
     tasks.append(asyncio.create_task(status.run()))
-
-    # # aiorepl for interactive debug (DEV_MODE only)
-    # if config.DEV_MODE:
-    #     tasks.append(asyncio.create_task(aiorepl.task()))
-     # NEW: async TCP REPL server
-    repl_ns = {
-        # give the REPL access to useful stuff:
-        "asyncio": asyncio,
-        "config": config,
-        "TP": TP,
-        "SCH_MGR": SCH_MGR,
-        "MENORAH": MENORAH,
-        "MM_MANAGER": MM,
-        "STATUS": STATUS,
-    }
-    tasks.append(asyncio.create_task(repl_server.start_repl_server(repl_ns)))
+    if config.REPL=='tcp':
+        # # aiorepl for interactive debug (DEV_MODE only)
+        # if config.DEV_MODE:
+        #     tasks.append(asyncio.create_task(aiorepl.task()))
+        # NEW: async TCP REPL server
+        import repl_server
+        repl_ns = {
+            # give the REPL access to useful stuff:
+            "asyncio": asyncio,
+            "config": config,
+            "TP": TP,
+            "SCH_MGR": SCH_MGR,
+            "MENORAH": MENORAH,
+            "MM_MANAGER": MM,
+            "STATUS": STATUS,
+        }
+        tasks.append(asyncio.create_task(repl_server.start_repl_server(repl_ns)))
+    elif 0:
+      pass  
+    else:
+        import aiorepl
+        tasks.append(asyncio.create_task(aiorepl.task()))
 
     print("All tasks started.")
     await asyncio.Event().wait()

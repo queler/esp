@@ -2,7 +2,7 @@
 
 # Toggle this in dev vs prod. Later you can wire this to a GPIO or file.
 DEV_MODE = True
-
+REPL='aiorepl'
 # Time source selection
 USE_DEBUG_TIME = False #DEV_MODE  # In dev, use DebugTimeProvider; in prod, NTP
 
