@@ -3,3 +3,12 @@ wifi.json
 __pycache__
 typings
 chat279e0.patch
+.esp_repl_history
+combined.txt
+webrepl_cfg._py
+wifitest.sh
+tools/MicroPython WebREPL.html
+tools/MicroPython WebREPL_files/FileSaver.js
+tools/MicroPython WebREPL_files/term.js
+tools/MicroPython WebREPL_files/webrepl.css
+tools/MicroPython WebREPL_files/webrepl.js
