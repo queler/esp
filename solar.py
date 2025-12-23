@@ -9,7 +9,6 @@
 # - This is an approximation (NOAA-style) and is intended for scheduling.
 
 import math
-from typing import Optional, Tuple
 
 _ZENITH_DEG = 90.833  # official sunrise/sunset
 
@@ -35,7 +34,7 @@ def _clamp(x: float, lo: float, hi: float) -> float:
 
 
 def sunrise_sunset_minutes(y: int, m: int, d: int, lat_deg: float, lon_deg: float, utc_offset_min: int = 0,
-                           sunrise_fudge_min: int = 0, sunset_fudge_min: int = 0) -> Tuple[Optional[int], Optional[int]]:
+                           sunrise_fudge_min: int = 0, sunset_fudge_min: int = 0):
     """Return (sunrise_min, sunset_min) minutes since local midnight.
 
     Returns (None, None) for polar day/night.
@@ -102,10 +101,10 @@ class SolarCache:
         self.sunrise_fudge_min = sunrise_fudge_min
         self.sunset_fudge_min = sunset_fudge_min
 
-        self._cache_ymd: Optional[Tuple[int, int, int]] = None
-        self._cache: Tuple[Optional[int], Optional[int]] = (None, None)
+        self._cache_ymd = None
+        self._cache = (None, None)
 
-    def sunrise_sunset(self, y: int, m: int, d: int)-> Tuple[Optional[int], Optional[int]]:
+    def sunrise_sunset(self, y: int, m: int, d: int):
         key = (y, m, d)
         if key != self._cache_ymd:
             self._cache = sunrise_sunset_minutes(

@@ -15,3 +15,13 @@ MODE_POLL_INTERVAL = 1
 
 # How often StatusManager updates blink codes (seconds)
 STATUS_TICK_INTERVAL = 0.2
+
+# Location (needed for sunrise/sunset)
+# lon: negative = west, positive = east
+LATITUDE = 38.85     # <-- set this
+LONGITUDE = -77.30   # <-- set this
+
+# Optional tweak knobs:
+# If you want "night" to start a few minutes after sunset (or end before sunrise), change these.
+SUNSET_FUDGE_MINUTES = 0
+SUNRISE_FUDGE_MINUTES = 0
