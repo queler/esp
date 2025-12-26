@@ -105,6 +105,10 @@ class SolarCache:
         self._cache = (None, None)
 
     def sunrise_sunset(self, y: int, m: int, d: int):
+        """
+
+
+        """
         key = (y, m, d)
         if key != self._cache_ymd:
             self._cache = sunrise_sunset_minutes(

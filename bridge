@@ -1,1 +1,4 @@
+#!/usr/bin/env bash
+if [[ -c /dev/ttyRFC2217 ]]; then
+
 sudo socat PTY,link=/dev/ttyRFC2217,raw,echo=0,user=amq102 TCP:localhost:4000
