@@ -4,6 +4,27 @@ import ujson
 import machine
 import time
 
+def _urldecode(s):
+    if not s:
+        return ''
+    s = s.replace('+', ' ')
+    res = ''
+    i = 0
+    l = len(s)
+    while i < l:
+        ch = s[i]
+        if ch == '%' and i + 2 < l:
+            try:
+                hexv = s[i+1:i+3]
+                res += chr(int(hexv, 16))
+                i += 3
+                continue
+            except Exception:
+                pass
+        res += ch
+        i += 1
+    return res
+
 
 class WiFiManager:
     CONFIG_FILE = 'wifi.json'
@@ -110,26 +131,6 @@ class WiFiManager:
         return sta.isconnected()
 
     # ---------- Simple URL decode ----------
-    def _urldecode(self, s):
-        if not s:
-            return ''
-        s = s.replace('+', ' ')
-        res = ''
-        i = 0
-        L = len(s)
-        while i < L:
-            ch = s[i]
-            if ch == '%' and i + 2 < L:
-                try:
-                    hexv = s[i+1:i+3]
-                    res += chr(int(hexv, 16))
-                    i += 3
-                    continue
-                except Exception:
-                    pass
-            res += ch
-            i += 1
-        return res
 
     # ---------- Config portal (append mode) ----------
     def start_config_portal(self, listen_addr='0.0.0.0', port=80,noap=False):
@@ -221,11 +222,11 @@ class WiFiManager:
 
                     ssid = ''
                     if params.get('ssid_manual'):
-                        ssid = self._urldecode(params.get('ssid_manual'))
+                        ssid = _urldecode(params.get('ssid_manual'))
                     elif params.get('ssid_select'):
-                        ssid = self._urldecode(params.get('ssid_select'))
+                        ssid = _urldecode(params.get('ssid_select'))
 
-                    password = self._urldecode(params.get('password', ''))
+                    password = _urldecode(params.get('password', ''))
 
                     if ssid:
                         self._add_or_update_network(ssid, password)

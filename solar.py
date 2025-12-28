@@ -70,9 +70,9 @@ def sunrise_sunset_minutes(y: int, m: int, d: int, lat_deg: float, lon_deg: floa
     cos_ha = (math.cos(zen) / (math.cos(lat) * math.cos(decl))) - math.tan(lat) * math.tan(decl)
 
     if cos_ha > 1.0:
-        return (None, None)  # sun never rises
+        return None, None  # sun never rises
     if cos_ha < -1.0:
-        return (None, None)  # sun never sets
+        return None, None  # sun never sets
 
     ha_deg = math.degrees(math.acos(_clamp(cos_ha, -1.0, 1.0)))
 
@@ -87,7 +87,7 @@ def sunrise_sunset_minutes(y: int, m: int, d: int, lat_deg: float, lon_deg: floa
     sunrise = sunrise % 1440.0
     sunset = sunset % 1440.0
 
-    return (int(round(sunrise)), int(round(sunset)))
+    return int(round(sunrise)), int(round(sunset))
 
 
 class SolarCache:

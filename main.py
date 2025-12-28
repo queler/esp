@@ -7,7 +7,6 @@ from wifi_manager import WiFiManager
 from candle import Candle
 from menorah import MenorahController
 from time_provider import NTPTimeProvider, DebugTimeProvider
-from schedule_events import EVENTS
 from schedule_manager import ScheduleManager
 from mode_manager import ModeManager
 from status_manager import StatusManager, ERR_WIFI, ERR_SCHEDULE
@@ -66,17 +65,15 @@ async def main():
     SCH_MGR= schedule_mgr
     print("Starting tasks...")
 
-    tasks = []
-
-    # Menorah loop
-    tasks.append(asyncio.create_task(menorah.run()))
-
-    # Mode loop
-    tasks.append(asyncio.create_task(mode_mgr.run()))
-
-    # Status manager (currently no LEDs wired; harmless)
-    tasks.append(asyncio.create_task(status.run()))
-    if config.REPL=='tcp':
+    tasks = [
+        # Menorah loop
+            asyncio.create_task(menorah.run()),
+        # Mode loop
+            asyncio.create_task(mode_mgr.run()),
+        # Status manager (currently no LEDs wired; harmless)
+            asyncio.create_task(status.run())
+    ]
+       if config.REPL=='tcp':
         # # aiorepl for interactive debug (DEV_MODE only)
         # if config.DEV_MODE:
         #     tasks.append(asyncio.create_task(aiorepl.task()))

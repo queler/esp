@@ -1,8 +1,4 @@
 # schedule_manager.py
-
-from schedule_events import EVENTS
-
-
 class ScheduleManager:
     """
     Event-based schedule with a cursor.
@@ -32,12 +28,12 @@ class ScheduleManager:
     @staticmethod
     def _key(e):
         y, m, d, hh, mm, state = e
-        return (y, m, d, hh, mm)
+        return y, m, d, hh, mm
 
     @staticmethod
     def _now_key(ymd_hms):
         y, m, d, hh, mm, ss = ymd_hms
-        return (y, m, d, hh, mm)
+        return y, m, d, hh, mm
 
     def _find_index(self, now_key):
         """
