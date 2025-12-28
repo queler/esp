@@ -1,21 +1,38 @@
 import config
 import dttuple
 import heb
+import time
 from solar import SolarCache
 
 
 class Han:
-    def __init__(self, ymd):
-        self._y, self._m, self._d = ymd
-        self._start = [None] * 8
-        self._end   = [None] * 8
+    hd: int
+    hd : int
+    hy:int
+    hmo :int
+    valid_until: tuple[int,... ]
+    _start:list[tuple[int,...] ]
+    _end:list[tuple[int,...]]
+    ymd: tuple[int,int,int]
+    sch_hy:[int]
+    def __init__(self, ymd: tuple|None = None):
 
+        if ymd is None:
+            ymd = time.localtime()
+        self.reinit(ymd[:3])
+
+    def reinit(self, ymd=time.localtime()[:3]):
+        # noinspection PyTypeChecker
+        self._start = [None] * 8
+        # noinspection PyTypeChecker
+        self._end = [None] * 8
+        self.ymd = ymd
         solar = SolarCache(
             config.LATITUDE,
             config.LONGITUDE,
             config.TIMEZONE_OFFSET_MINUTES,
             config.SUNRISE_FUDGE_MINUTES,  # sunrise fudge first
-            config.SUNSET_FUDGE_MINUTES,   # sunset fudge second
+            config.SUNSET_FUDGE_MINUTES,  # sunset fudge second
         )
 
         first_ymd = self.first_ymd_h_night()
@@ -25,25 +42,39 @@ class Han:
             np1_ymd = dttuple.add_days(*nth_ymd, 1)
 
             sunrise_today, sunset_today = solar.sunrise_sunset(*nth_ymd)
-            sunrise_next,  sunset_next  = solar.sunrise_sunset(*np1_ymd)
+            sunrise_next, sunset_next = solar.sunrise_sunset(*np1_ymd)
 
             # night starts at sunset of nth_ymd
             night_start_mins = sunset_today
             # night ends at sunrise of next day
-            night_end_mins   = sunrise_next
+            night_end_mins = sunrise_next
 
             self._start[i] = nth_ymd + (night_start_mins // 60, night_start_mins % 60)
-            self._end[i]   = np1_ymd + (night_end_mins   // 60, night_end_mins   % 60)
+            self._end[i] = np1_ymd + (night_end_mins // 60, night_end_mins % 60)
+        self.valid_until = heb.to_gregorian(self.sch_hy, heb.TEVETH, 4)
+
+    def is_expired(self, t:tuple[int,...]|None=None):
+        if t is None:
+            t = time.localtime()
+        return dttuple.mktimex(*t) >= dttuple.mktimex(*self.valid_until)
 
     def first_ymd_h_night(self):
-        Y, M, D = self._y, self._m, self._d
-        hy, hm, hd = heb.from_gregorian(Y, M, D)
+        self.hy, self.hmo, self.hd = heb.from_gregorian(*self.ymd)
 
         # If we're already safely past early Tevet, schedule next year's Hanukkah
-        if (hm > heb.TEVETH) or (hm == heb.TEVETH and hd > 4):
-            sch_year = hy + 1
+        if (self.hmo > heb.TEVETH) or (self.hmo == heb.TEVETH and self.hd >= 4):
+            self.sch_hy = self.hy + 1
         else:
-            sch_year = hy
+            self.sch_hy = self.hy
 
         # Return the civil date whose sunset begins 25 Kislev (i.e., civil day before 25 Kislev)
-        return heb.to_gregorian(sch_year, heb.KISLEV, 24)
+        return heb.to_gregorian(self.sch_hy, heb.KISLEV, 24)
+
+    def events(self):
+        assert len(self._start) == 8 and len(self._end) == 8
+        es = []
+        for i in range(8):
+            night = i + 1
+            es.append(self._start[i] + (night,))
+            es.append(self._end[i] + (0,))
+        return es
