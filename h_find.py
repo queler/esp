@@ -14,7 +14,7 @@ class Han:
     _start:list[tuple[int,...] ]
     _end:list[tuple[int,...]]
     ymd: tuple[int,int,int]
-    sch_hy:[int]
+    sch_hy:int
     def __init__(self, ymd: tuple|None = None):
 
         if ymd is None:
