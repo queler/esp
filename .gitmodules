@@ -1,3 +1,0 @@
-[submodule "tools/vfs_merge"]
-	path = tools/vfs_merge
-	url = git@github.com:Josverl/vfs_merge.git
