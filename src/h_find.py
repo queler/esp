@@ -1,6 +1,5 @@
 import config
 import dttuple
-from dttuple import mktimex
 import heb
 from schmaninterface import SchManInterface
 from solar import SolarCache
@@ -14,6 +13,7 @@ class Han(SchManInterface):
     valid_until: tuple[int,... ]
     _start:list[tuple[int,...] ]
     _end:list[tuple[int,...]]
+    _holiday_end:"tuple[int,int,int,int,int]"
     ymd: tuple[int,int,int]
     sch_hy:int
     events:list[tuple[int,...]]
@@ -48,20 +48,24 @@ class Han(SchManInterface):
             sunrise_next, sunset_next = solar.sunrise_sunset(*np1_ymd)
 
             # night starts at sunset of nth_ymd
-            night_start_mins = sunset_today
             # night ends at sunrise of next day
-            night_end_mins = sunrise_next
+            self._start[i] = nth_ymd + (sunset_today // 60, sunset_today % 60)
+            self._end[i] = np1_ymd + (sunrise_next // 60, sunrise_next % 60)
+        #TODO: do I want wait untill sundown *9* to start -1 mode
+        i=9
+        nth_ymd = dttuple.add_days(*first_ymd, i)
+        sunrise_today, sunset_today = solar.sunrise_sunset(*nth_ymd)
+        self._holiday_end = nth_ymd + (int(sunset_today // 60), int(sunset_today % 60))
 
-            self._start[i] = nth_ymd + (night_start_mins // 60, night_start_mins % 60)
-            self._end[i] = np1_ymd + (night_end_mins // 60, night_end_mins % 60)
+
         self.events = self.gen_events()
-        self.valid_until = heb.to_gregorian(self.sch_hy, heb.TEVETH, 4)
+        self.valid_until:"tuple[int,int,int]" = heb.to_gregorian(self.sch_hy, heb.TEVETH, 4)
 
     def is_expired(self, dt:tuple[int,...]) -> bool:
         #if tp is None:
         #    raise ValueError('i don\'t want to implement yet')
         #    #tp = time.localtime()
-        return dttuple.mktimex(*dt) >= dttuple.mktimex(*self.valid_until)
+        return dt[:3] >= self.valid_until
 
     def first_ymd_h_night(self):
         self.hy, self.hmo, self.hd = heb.from_gregorian(*self.ymd)
@@ -82,6 +86,7 @@ class Han(SchManInterface):
             night = i + 1
             es.append(self._start[i] + (night,))
             es.append(self._end[i] + (0,))
+        es.append(self._holiday_end)
         return es
 
     def get_state(self, ymd_hms: tuple[int, ...]) -> int:
@@ -89,7 +94,7 @@ class Han(SchManInterface):
             self.reinit(ymd_hms)
         state = -1
         for event in self.events:
-            if mktimex(*ymd_hms) < mktimex(*event):
+            if ymd_hms[:5] < event[:5]:
                 return state
             else:
                 state = event[-1]
@@ -97,6 +102,6 @@ class Han(SchManInterface):
 
     def test(self):
         import time
-        for i in range(mktimex(2025, 12, 10, 10, 0, 0), mktimex(2026), 12 * 60 * 61):
+        for i in range(time.mktime((2025, 12, 10, 10, 0, 0,0,0)), time.mktime((2026,1,1,0,0,0,0,0)), 12 * 60 * 61):
             print(time.localtime(i),self.get_state(time.localtime(i)))
 

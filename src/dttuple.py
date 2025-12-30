@@ -3,18 +3,6 @@
 
 import time
 
-LT_TUPLE_SIZE = len(time.localtime())
-
-
-def mktimex(y: int, mo: int = 1, d: int = 1, h: int = 0, mi: int = 0,
-            s: int = 0, wd: int = 0, yd: int = 0,
-            dst: int = -1) -> int:
-    if LT_TUPLE_SIZE == 9:
-        return int(time.mktime((y, mo, d, h, mi, s, wd, yd, dst)))
-    if LT_TUPLE_SIZE == 8:
-        return int(time.mktime((y, mo, d, h, mi, s, wd, yd)))
-    raise NotImplementedError("Unknown localtime() tuple size: %d" % LT_TUPLE_SIZE)
-
 
 def add_days(y: int, m: int, d: int, delta_days: int) -> tuple[int, int, int]:  # -> tuple[int, int, int]:
     """Return (y,m,d) shifted by delta_days, using a noon anchor for stability."""

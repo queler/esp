@@ -25,3 +25,6 @@ LONGITUDE = -77.21  # <-- set this
 # If you want "night" to start a few minutes after sunset (or end before sunrise), change these.
 SUNSET_FUDGE_MINUTES = -60
 SUNRISE_FUDGE_MINUTES = 60
+
+
+PRINT_MEM_INTERVAL=300

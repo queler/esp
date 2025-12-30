@@ -1,4 +1,5 @@
 # main.py
+import gc
 
 import uasyncio as asyncio
 
@@ -20,13 +21,14 @@ MM :ModeManager
 MENORAH:MenorahController
 STATUS:StatusManager
 SCH_MGR :Han
+TASKS:"list"
 PINS = (32, 25, 27, 12, 13, 23, 21, 19, 4)
 TRANSORDER = (0, 8, 7, 6, 5, 1, 2, 3, 4)
 MPINS = tuple(PINS[i] for i in TRANSORDER)
 
 
 async def main():
-    global TP, MM, MENORAH, STATUS, SCH_MGR
+    global TP, MM, MENORAH, STATUS, SCH_MGR, TASKS
 
     print("Menorah starting...")
 
@@ -66,7 +68,7 @@ async def main():
     SCH_MGR= schedule_mgr
     print("Starting tasks...")
 
-    tasks = [
+    TASKS = [
         # Menorah loop
             asyncio.create_task(menorah.run()),
         # Mode loop
@@ -96,11 +98,16 @@ async def main():
     #   pass
     else:
         import aiorepl
-        tasks.append(asyncio.create_task(aiorepl.task()))
-
+        TASKS.append(asyncio.create_task(aiorepl.task()))
+    if config.PRINT_MEM_INTERVAL>0:
+        TASKS.append(asyncio.create_task(printmem()))
     print("All tasks started.")
     await asyncio.Event().wait()
 
+async def printmem():
+    while True:
+        print (TP.get_time(),"gc.free_mem:",gc.mem_free())
+        await asyncio.sleep(config.PRINT_MEM_INTERVAL)
 
 async def _wifi_init(wifi, status):
     try:
