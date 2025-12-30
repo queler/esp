@@ -8,6 +8,7 @@ script_path="$(readlink -f -- "$script_ref")"
 
 # Directory containing the script
 script_dir="$(dirname -- "$script_path")"
+cd "$script_dir"
 # ---------- config (override via env) ----------
 REAL_DEV="${REAL_DEV:-/dev/ttyUSB0}"
 SIM_DEV="${SIM_DEV:-/dev/ttyRFC2217}"
@@ -120,24 +121,25 @@ autodetect_target() {
 }
 
 list_deploy_files() {
-  find "$script_dir/src" -maxdepth 1 -type f \( -name '*.py' -o -name 'wifi.json' \) -print \
+  find "src" "lib" -maxdepth 1 -type f \( -name '*.py' -o -name 'wifi.json' \) -print \
     | sed 's|^\./||' \
     | LC_ALL=C sort
 }
 
 deploy() {
   local dev="$1"
-  local files
-  files="$(list_deploy_files)"
+#  local files
+#  files="$(list_deploy_files)"
 
-  [[ -z "$files" ]] && die "No *.py or wifi.json found in $(pwd)"
+#  [[ -z "$files" ]] && die "No *.py or wifi.json found in $(pwd)"
 
   info "Deploying to $dev"
-  while IFS= read -r f; do
-    [[ -z "$f" ]] && continue
-    info "  -> $f"
-    mpremote connect "$dev" cp "$f" ":$f"
-  done <<< "$files"
+#  while IFS= read -r f; do
+#    [[ -z "$f" ]] && continue
+#    info "  -> $f"
+    mpremote connect "$dev" cp src/*.py :
+	mpremote connect "$dev" cp -r lib :
+#  done <<< "$files"
 }
 
 usage() {
