@@ -1,27 +1,28 @@
 # main.py
 
 import uasyncio as asyncio
-import config
-from h_find import Han
 
-from wifi_manager import WiFiManager
+import config
 from candle import Candle
+from h_find import Han
 from menorah import MenorahController
-from time_provider import NTPTimeProvider, DebugTimeProvider
-#from schedule_manager import ScheduleManager
+# from schedule_manager import ScheduleManager
 from mode_manager import ModeManager
 from status_manager import StatusManager, ERR_WIFI, ERR_SCHEDULE
+from time_provider import NTPTimeProvider, DebugTimeProvider, BaseTimeProvider
+from wifi_manager import WiFiManager
+
 #import aiorepl
 #import repl_server
 # Globals for REPL
-TP = None
-MM = None
-MENORAH = None
-STATUS = None
-SCH_MGR = None
-PINS = [32, 25, 27, 12, 13, 23, 21, 19, 4]
-TRANSORDER = [0, 8, 7, 6, 5, 1, 2, 3, 4]
-MPINS = [PINS[i] for i in TRANSORDER]
+TP:BaseTimeProvider
+MM :ModeManager
+MENORAH:MenorahController
+STATUS:StatusManager
+SCH_MGR :Han
+PINS = (32, 25, 27, 12, 13, 23, 21, 19, 4)
+TRANSORDER = (0, 8, 7, 6, 5, 1, 2, 3, 4)
+MPINS = tuple(PINS[i] for i in TRANSORDER)
 
 
 async def main():
@@ -48,7 +49,7 @@ async def main():
     await time_provider.init(status)
     TP = time_provider
     # --- Schedule (event-based) ---
-    schedule_mgr = Han(TP)
+    schedule_mgr = Han(TP.get_time())
     if not schedule_mgr.events:
         status.set_error(ERR_SCHEDULE)
     else:
@@ -91,8 +92,8 @@ async def main():
         # }
         # tasks.append(asyncio.create_task(repl_server.start_repl_server(repl_ns)))
         raise NotImplementedError
-    elif 0:
-      pass  
+    # elif 0:
+    #   pass
     else:
         import aiorepl
         tasks.append(asyncio.create_task(aiorepl.task()))

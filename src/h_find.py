@@ -1,14 +1,13 @@
-from typing import Any
-
 import config
 import dttuple
+from dttuple import mktimex
 import heb
+from schmaninterface import SchManInterface
 from solar import SolarCache
-from time_provider import BaseTimeProvider
 
 
-class Han(i_man):
-    hd: int
+class Han(SchManInterface):
+
     hd : int
     hy:int
     hmo :int
@@ -18,19 +17,19 @@ class Han(i_man):
     ymd: tuple[int,int,int]
     sch_hy:int
     events:list[tuple[int,...]]
-    def __init__(self, tp: BaseTimeProvider):
+    def __init__(self, dt:tuple[int,...]):
 
         # if ymd is None:
         #     ymd = time.localtime()
-        self.reinit(tp)
+        self.reinit(dt)
 
-    def reinit(self, tp:BaseTimeProvider):
+    def reinit(self, dt:tuple[int,...]):
         # noinspection PyTypeChecker
         self._start = [None] * 8
         # noinspection PyTypeChecker
         self._end = [None] * 8
         # noinspection PyTypeChecker
-        self.ymd = tp.get_time()[:3]
+        self.ymd = dt[:3]
         solar = SolarCache(
             config.LATITUDE,
             config.LONGITUDE,
@@ -58,11 +57,11 @@ class Han(i_man):
         self.events = self.gen_events()
         self.valid_until = heb.to_gregorian(self.sch_hy, heb.TEVETH, 4)
 
-    def is_expired(self, tp:BaseTimeProvider):
-        if tp is None:
-            raise ValueError('i don\'t want to implement yet')
-            #tp = time.localtime()
-        return dttuple.mktimex(*tp.get_time()) >= dttuple.mktimex(*self.valid_until)
+    def is_expired(self, dt:tuple[int,...]) -> bool:
+        #if tp is None:
+        #    raise ValueError('i don\'t want to implement yet')
+        #    #tp = time.localtime()
+        return dttuple.mktimex(*dt) >= dttuple.mktimex(*self.valid_until)
 
     def first_ymd_h_night(self):
         self.hy, self.hmo, self.hd = heb.from_gregorian(*self.ymd)
@@ -76,7 +75,7 @@ class Han(i_man):
         # Return the civil date whose sunset begins 25 Kislev (i.e., civil day before 25 Kislev)
         return heb.to_gregorian(self.sch_hy, heb.KISLEV, 24)
 
-    def gen_events(self) -> list[Any]:
+    def gen_events(self) -> list[tuple[int,...]]:
         assert len(self._start) == 8 and len(self._end) == 8
         es = []
         for i in range(8):
@@ -84,3 +83,20 @@ class Han(i_man):
             es.append(self._start[i] + (night,))
             es.append(self._end[i] + (0,))
         return es
+
+    def get_state(self, ymd_hms: tuple[int, ...]) -> int:
+        if self.is_expired(ymd_hms):
+            self.reinit(ymd_hms)
+        state = -1
+        for event in self.events:
+            if mktimex(*ymd_hms) < mktimex(*event):
+                return state
+            else:
+                state = event[-1]
+        return -1
+
+    def test(self):
+        import time
+        for i in range(mktimex(2025, 12, 10, 10, 0, 0), mktimex(2026), 12 * 60 * 61):
+            print(time.localtime(i),self.get_state(time.localtime(i)))
+
