@@ -27,7 +27,7 @@ def _urldecode(s):
 
 
 class WiFiManager:
-    CONFIG_FILE = 'wifi.json'
+    CONFIG_FILE = '../wifi.json'
 
     def __init__(self, ap_ssid=None):
         uid = ''.join('{:02x}'.format(b) for b in machine.unique_id())

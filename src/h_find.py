@@ -1,11 +1,13 @@
+from typing import Any
+
 import config
 import dttuple
 import heb
-import time
 from solar import SolarCache
+from time_provider import BaseTimeProvider
 
 
-class Han:
+class Han(i_man):
     hd: int
     hd : int
     hy:int
@@ -15,18 +17,20 @@ class Han:
     _end:list[tuple[int,...]]
     ymd: tuple[int,int,int]
     sch_hy:int
-    def __init__(self, ymd: tuple|None = None):
+    events:list[tuple[int,...]]
+    def __init__(self, tp: BaseTimeProvider):
 
-        if ymd is None:
-            ymd = time.localtime()
-        self.reinit(ymd[:3])
+        # if ymd is None:
+        #     ymd = time.localtime()
+        self.reinit(tp)
 
-    def reinit(self, ymd=time.localtime()[:3]):
+    def reinit(self, tp:BaseTimeProvider):
         # noinspection PyTypeChecker
         self._start = [None] * 8
         # noinspection PyTypeChecker
         self._end = [None] * 8
-        self.ymd = ymd
+        # noinspection PyTypeChecker
+        self.ymd = tp.get_time()[:3]
         solar = SolarCache(
             config.LATITUDE,
             config.LONGITUDE,
@@ -51,12 +55,14 @@ class Han:
 
             self._start[i] = nth_ymd + (night_start_mins // 60, night_start_mins % 60)
             self._end[i] = np1_ymd + (night_end_mins // 60, night_end_mins % 60)
+        self.events = self.gen_events()
         self.valid_until = heb.to_gregorian(self.sch_hy, heb.TEVETH, 4)
 
-    def is_expired(self, t:tuple[int,...]|None=None):
-        if t is None:
-            t = time.localtime()
-        return dttuple.mktimex(*t) >= dttuple.mktimex(*self.valid_until)
+    def is_expired(self, tp:BaseTimeProvider):
+        if tp is None:
+            raise ValueError('i don\'t want to implement yet')
+            #tp = time.localtime()
+        return dttuple.mktimex(*tp.get_time()) >= dttuple.mktimex(*self.valid_until)
 
     def first_ymd_h_night(self):
         self.hy, self.hmo, self.hd = heb.from_gregorian(*self.ymd)
@@ -70,7 +76,7 @@ class Han:
         # Return the civil date whose sunset begins 25 Kislev (i.e., civil day before 25 Kislev)
         return heb.to_gregorian(self.sch_hy, heb.KISLEV, 24)
 
-    def events(self):
+    def gen_events(self) -> list[Any]:
         assert len(self._start) == 8 and len(self._end) == 8
         es = []
         for i in range(8):

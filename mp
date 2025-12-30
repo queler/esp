@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Path as it was invoked (may be relative)
+script_ref="${BASH_SOURCE[0]}"
 
+# Absolute, dereferenced path to the script file
+script_path="$(readlink -f -- "$script_ref")"
+
+# Directory containing the script
+script_dir="$(dirname -- "$script_path")"
 # ---------- config (override via env) ----------
 REAL_DEV="${REAL_DEV:-/dev/ttyUSB0}"
 SIM_DEV="${SIM_DEV:-/dev/ttyRFC2217}"
@@ -113,7 +120,7 @@ autodetect_target() {
 }
 
 list_deploy_files() {
-  find . -maxdepth 1 -type f \( -name '*.py' -o -name 'wifi.json' \) -print \
+  find "$script_dir/src" -maxdepth 1 -type f \( -name '*.py' -o -name 'wifi.json' \) -print \
     | sed 's|^\./||' \
     | LC_ALL=C sort
 }

@@ -2,12 +2,13 @@
 
 import uasyncio as asyncio
 import config
+from h_find import Han
 
 from wifi_manager import WiFiManager
 from candle import Candle
 from menorah import MenorahController
 from time_provider import NTPTimeProvider, DebugTimeProvider
-from schedule_manager import ScheduleManager
+#from schedule_manager import ScheduleManager
 from mode_manager import ModeManager
 from status_manager import StatusManager, ERR_WIFI, ERR_SCHEDULE
 #import aiorepl
@@ -46,10 +47,9 @@ async def main():
         )
     await time_provider.init(status)
     TP = time_provider
-
     # --- Schedule (event-based) ---
-    schedule_mgr = ScheduleManager(EVENTS)
-    if not EVENTS:
+    schedule_mgr = Han(TP)
+    if not schedule_mgr.events:
         status.set_error(ERR_SCHEDULE)
     else:
         status.clear_error(ERR_SCHEDULE)
@@ -73,23 +73,24 @@ async def main():
         # Status manager (currently no LEDs wired; harmless)
             asyncio.create_task(status.run())
     ]
-       if config.REPL=='tcp':
+    if config.REPL== 'tcp':
         # # aiorepl for interactive debug (DEV_MODE only)
         # if config.DEV_MODE:
         #     tasks.append(asyncio.create_task(aiorepl.task()))
         # NEW: async TCP REPL server
-        import repl_server
-        repl_ns = {
-            # give the REPL access to useful stuff:
-            "asyncio": asyncio,
-            "config": config,
-            "TP": TP,
-            "SCH_MGR": SCH_MGR,
-            "MENORAH": MENORAH,
-            "MM_MANAGER": MM,
-            "STATUS": STATUS,
-        }
-        tasks.append(asyncio.create_task(repl_server.start_repl_server(repl_ns)))
+        # import repl_server
+        # repl_ns = {
+        #     # give the REPL access to useful stuff:
+        #     "asyncio": asyncio,
+        #     "config": config,
+        #     "TP": TP,
+        #     "SCH_MGR": SCH_MGR,
+        #     "MENORAH": MENORAH,
+        #     "MM_MANAGER": MM,
+        #     "STATUS": STATUS,
+        # }
+        # tasks.append(asyncio.create_task(repl_server.start_repl_server(repl_ns)))
+        raise NotImplementedError
     elif 0:
       pass  
     else:
