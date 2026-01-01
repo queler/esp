@@ -34,7 +34,7 @@ def _clamp(x: float, lo: float, hi: float) -> float:
 
 
 def sunrise_sunset_minutes(y: int, m: int, d: int, lat_deg: float, lon_deg: float, utc_offset_min: int = 0,
-                           sunrise_fudge_min: int = 0, sunset_fudge_min: int = 0):
+                           sunrise_fudge_min: "int "= 0, sunset_fudge_min: int = 0):
     """Return (sunrise_min, sunset_min) minutes since local midnight.
 
     Returns (None, None) for polar day/night.
@@ -94,7 +94,7 @@ class SolarCache:
     """Tiny cache around sunrise_sunset_minutes for repeated queries."""
 
     def __init__(self, lat_deg: float, lon_deg: float, utc_offset_min: int,
-                 sunrise_fudge_min: int = 0, sunset_fudge_min: int = 0):
+                 sunrise_fudge_min: "int "= 0, sunset_fudge_min: int = 0):
         self.lat = lat_deg
         self.lon = lon_deg
         self.utc_offset_min = utc_offset_min

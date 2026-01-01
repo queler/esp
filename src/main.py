@@ -16,11 +16,11 @@ from wifi_manager import WiFiManager
 #import aiorepl
 #import repl_server
 # Globals for REPL
-TP:BaseTimeProvider
-MM :ModeManager
-MENORAH:MenorahController
-STATUS:StatusManager
-SCH_MGR :Han
+TP: "BaseTimeProvider"
+MM : "ModeManager"
+MENORAH: "MenorahController"
+STATUS: "StatusManager"
+SCH_MGR : "Han"
 TASKS:"list"
 PINS = (32, 25, 27, 12, 13, 23, 21, 19, 4)
 TRANSORDER = (0, 8, 7, 6, 5, 1, 2, 3, 4)

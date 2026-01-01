@@ -7,16 +7,16 @@ from solar import SolarCache
 
 class Han(SchManInterface):
 
-    hd : int
-    hy:int
-    hmo :int
-    valid_until: tuple[int,... ]
-    _start:list[tuple[int,...] ]
-    _end:list[tuple[int,...]]
+    hd : "int"
+    hy: "int"
+    hmo : "int"
+    valid_until: "tuple[int,... ]"
+    _start: "list[tuple[int,...] ]"
+    _end: "list[tuple[int,...]]"
     _holiday_end:"tuple[int,int,int,int,int]"
-    ymd: tuple[int,int,int]
-    sch_hy:int
-    events:list[tuple[int,...]]
+    ymd: "tuple[int,int,int]"
+    sch_hy: "int"
+    events: "list[tuple[int,...]]"
     def __init__(self, dt:tuple[int,...]):
 
         # if ymd is None:
