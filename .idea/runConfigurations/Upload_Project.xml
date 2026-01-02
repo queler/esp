@@ -1,0 +1,23 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Upload Project" type="micropython-tools-configuration-type" factoryName="micropython-tools-upload-configuration">
+    <option name="excludePaths" value="true" />
+    <option name="excludedPaths">
+      <list>
+        <option value="/__pycache__" />
+        <option value="/firmware" />
+        <option value="/firmware" />
+        <option value="/tools" />
+        <option value="/tools" />
+        <option value="/venv" />
+        <option value="/.git" />
+        <option value="/.github" />
+        <option value="/.idea" />
+        <option value="/.vscode" />
+      </list>
+    </option>
+    <option name="path" />
+    <option name="switchToReplOnSuccess" value="true" />
+    <option name="synchronize" value="true" />
+    <method v="2" />
+  </configuration>
+</component>

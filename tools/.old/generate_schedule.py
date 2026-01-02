@@ -22,7 +22,7 @@ LONGITUDE = -77.0
 TIMEZONE_NAME = "America/New_York"
 
 H_START_YEAR = 5786
-NUM_YEARS = 25
+NUM_YEARS = 50
 
 OFFSET_BEFORE_SUNSET = 60    # minutes before sunset to start
 OFFSET_AFTER_SUNRISE = 60    # minutes after sunrise to end
@@ -103,7 +103,7 @@ def find_hanukkah_events_for_year(hy, tz, location):
         ))
     end_of_last_night = first_night_date + timedelta(days=8)
     last_night_sunset=suns[end_of_last_night]["sunset"]
-    end_holiday_dt = last_night_sunset + timedelta(minutes=OFFSET_BEFORE_SUNSET)
+    end_holiday_dt = last_night_sunset - timedelta(minutes=OFFSET_BEFORE_SUNSET)
     events.append((
         end_holiday_dt.year, 
         end_holiday_dt.month,

@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="true" type="micropython-tools-configuration-type" factoryName="micropython-tools-upload-configuration">
+    <option name="excludePaths" value="true" />
+    <option name="path" />
+    <option name="switchToReplOnSuccess" value="true" />
+    <option name="synchronize" value="true" />
+    <method v="2" />
+  </configuration>
+</component>

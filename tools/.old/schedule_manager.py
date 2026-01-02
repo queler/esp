@@ -1,9 +1,13 @@
 # schedule_manager.py
-
 from schedule_events import EVENTS
 
+from schmaninterface import SchManInterface
 
-class ScheduleManager:
+
+#TODO: make abstract. replace entirely with Han
+
+
+class ScheduleManager(SchManInterface):
     """
     Event-based schedule with a cursor.
 
@@ -30,14 +34,9 @@ class ScheduleManager:
     # ---- helpers --------------------------------------------------------
 
     @staticmethod
-    def _key(e):
-        y, m, d, hh, mm, state = e
-        return (y, m, d, hh, mm)
-
-    @staticmethod
     def _now_key(ymd_hms):
         y, m, d, hh, mm, ss = ymd_hms
-        return (y, m, d, hh, mm)
+        return y, m, d, hh, mm
 
     def _find_index(self, now_key):
         """
@@ -107,3 +106,8 @@ class ScheduleManager:
         self._index = i
         self._last_key = now_key
         return self._state_from_index()
+
+    @staticmethod
+    def _key(e):
+        y, m, d, hh, mm, state = e
+        return y, m, d, hh, mm

@@ -109,7 +109,7 @@ async def task(g=None, prompt="--> "):
         while True:
             hist_b = 0  # How far back in the history are we currently.
             sys.stdout.write(prompt)
-            cmd: str = ""
+            cmd: "str "= ""
             paste = False
             curs = 0  # cursor offset from end of cmd buffer
             while True:

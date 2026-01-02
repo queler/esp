@@ -13,7 +13,7 @@ class BaseTimeProvider:
         # Override in subclass
         return
 
-    def get_time(self):
+    def get_time(self)-> tuple[int,int,int,int,int,int] :
         # Returns (Y, M, D, h, m, s)
         raise NotImplementedError
 
@@ -110,7 +110,7 @@ class DebugTimeProvider(BaseTimeProvider):
         if status_manager:
             status_manager.clear_error(ERR_TIME_INVALID)
 
-    def get_time(self):
+    def get_time(self)-> tuple[int,int,int,int,int,int] :
         now_real = utime.time()
         delta_real = now_real - self._base_real
         sim_secs = self._base_epoch + int(delta_real * self._speed)
