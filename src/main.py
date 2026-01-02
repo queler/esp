@@ -25,10 +25,14 @@ TASKS:"list"
 PINS = (32, 25, 27, 12, 13, 23, 21, 19, 4)
 TRANSORDER = (0, 8, 7, 6, 5, 1, 2, 3, 4)
 MPINS = tuple(PINS[i] for i in TRANSORDER)
+CANDLES = None
+TASKS = []
+_RESTARTING = False
 
 
 async def main():
-    global TP, MM, MENORAH, STATUS, SCH_MGR, TASKS
+    global CANDLES, _RESTARTING, TP, \
+        MM, MENORAH, STATUS, SCH_MGR, TASKS
 
     print("Menorah starting...")
 
@@ -59,6 +63,8 @@ async def main():
 
     # --- Candles & Menorah ---
     candles = [Candle(pin) for pin in MPINS]
+    CANDLES = candles
+
     menorah = MenorahController(candles, shamash_index=0)
     MENORAH = menorah
 
@@ -122,5 +128,71 @@ async def _wifi_init(wifi, status):
         status.clear_error(ERR_WIFI)
     return ok
 
+async def _cancel_tasks(tasks):
+    # Cancel and give the loop a chance to deliver CancelledError
+    for t in tasks:
+        try:
+            t.cancel()
+        except Exception:
+            pass
+    # let cancellations run
+    await asyncio.sleep_ms(0)
+    await asyncio.sleep_ms(50)
+
+
+async def _restart_tasks_async(resync_time=False, restart_repl=True):
+    global TASKS, MM, MENORAH, SCH_MGR, TP, STATUS, _RESTARTING
+
+    if _RESTARTING:
+        print("restart already in progress")
+        return
+    _RESTARTING = True
+
+    old = TASKS
+    TASKS = []
+
+    # cancel existing tasks
+    await _cancel_tasks(old)
+
+    # optionally resync time
+    if resync_time:
+        try:
+            await TP.init(STATUS)
+        except Exception as e:
+            print("time resync failed:", e)
+
+    # rebuild schedule + mode + menorah controller (reuse same Candle objects)
+    SCH_MGR = Han(TP.get_time())
+    MENORAH = MenorahController(CANDLES, shamash_index=0)
+    MM = ModeManager(TP, SCH_MGR, MENORAH, STATUS)
+
+    # start tasks again
+    tasks = [
+        asyncio.create_task(MENORAH.run()),
+        asyncio.create_task(MM.run()),
+        asyncio.create_task(STATUS.run()),
+    ]
+
+    if restart_repl and config.REPL != "tcp":
+        try:
+            import aiorepl
+            tasks.append(asyncio.create_task(aiorepl.task()))
+        except Exception as e:
+            print("aiorepl restart failed:", e)
+
+    TASKS = tasks
+    _RESTARTING = False
+    print("tasks restarted")
+
+
+def restart_tasks(resync_time=False, restart_repl=True):
+    # call from *real* REPL:
+    #   import main; main.restart_tasks()
+    asyncio.create_task(_restart_tasks_async(resync_time=resync_time, restart_repl=restart_repl))
+
+
+def stop_tasks():
+    # useful if you want to drop into REPL without background loops
+    asyncio.create_task(_cancel_tasks(TASKS))
 
 asyncio.run(main())

@@ -138,7 +138,8 @@ deploy() {
 #    [[ -z "$f" ]] && continue
 #    info "  -> $f"
     mpremote connect "$dev" cp src/*.py :
-	mpremote connect "$dev" cp -r lib :
+    mpremote connect "$dev" cp wifi.json :
+    mpremote connect "$dev" cp -r lib :
 #  done <<< "$files"
 }
 
