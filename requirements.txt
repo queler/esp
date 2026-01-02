@@ -38,8 +38,8 @@ MarkupSafe==3.0.3
 matplotlib-inline==0.2.1
 mccabe==0.7.0
 mdurl==0.1.2
-micropython-esp32-esp32_generic-stubs==1.26.0.post1
-micropython-stdlib-stubs==1.26.0.post3
+micropython-esp32-esp32_generic-stubs==1.27.0.post1
+micropython-stdlib-stubs==1.27.0
 mistune==3.1.4
 mpremote==1.26.1
 mypy==1.19.0
