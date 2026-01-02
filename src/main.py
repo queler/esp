@@ -66,6 +66,7 @@ async def main():
     CANDLES = candles
 
     menorah = MenorahController(candles, shamash_index=0)
+    menorah.set_time_fn(TP.get_time)
     MENORAH = menorah
 
     # --- Mode manager ---

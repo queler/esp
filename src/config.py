@@ -15,6 +15,9 @@ MODE_POLL_INTERVAL = 1
 
 # How often StatusManager updates blink codes (seconds)
 STATUS_TICK_INTERVAL = 0.2
+# Idle display (when schedule state == -1)
+IDLE_DATE_SECONDS = 2
+IDLE_TIME_SECONDS = 5
 
 # Location (needed for sunrise/sunset)
 # lon: negative = west, positive = east
