@@ -121,26 +121,77 @@ autodetect_target() {
 }
 
 list_deploy_files() {
-  find "src" "lib" -maxdepth 1 -type f \( -name '*.py' -o -name 'wifi.json' \) -print \
-    | sed 's|^\./||' \
-    | LC_ALL=C sort
+  {
+    find "src" -maxdepth 1 -type f -name '*.py' -print
+    [[ -f "wifi.json" ]] && echo "wifi.json"
+    find "lib" -type f -print
+  } | sed 's|^\./||' | LC_ALL=C sort
+}
+
+sha_local() {
+  sha256sum "$1" | grep -Eo '[0-9a-fA-F]{64}'
+
+}
+
+sha_remote() {
+  local dev="$1" rpath="$2"
+  # mpremote prints: "<hash>  <filename>"
+  mpremote connect "$dev" sha256sum "$rpath" 2>/dev/null | grep -Eo '[0-9a-fA-F]{64}'
+
+}
+
+remote_path_for() {
+  local f="$1"
+  if [[ "$f" == src/* ]]; then
+    # src/foo.py -> :/foo.py (device root)
+    echo ":/${f#src/}"
+  elif [[ "$f" == lib/* ]]; then
+    # lib/a/b.py -> :/lib/a/b.py
+    echo ":/$f"
+  else
+    # wifi.json -> :/wifi.json
+    echo ":/$f"
+  fi
 }
 
 deploy() {
   local dev="$1"
-#  local files
-#  files="$(list_deploy_files)"
+  info "Deploying (changed-only) to $dev"
 
-#  [[ -z "$files" ]] && die "No *.py or wifi.json found in $(pwd)"
+  local files
+  files="$(list_deploy_files)"
+  [[ -z "$files" ]] && die "No deploy files found (src/*.py, wifi.json, lib/**)"
 
-  info "Deploying to $dev"
-#  while IFS= read -r f; do
-#    [[ -z "$f" ]] && continue
-#    info "  -> $f"
-    mpremote connect "$dev" cp src/*.py :
-    mpremote connect "$dev" cp wifi.json :
-    mpremote connect "$dev" cp -r lib :
-#  done <<< "$files"
+  # cache dirs we've mkdir'd so we don't spam the device
+  declare -A made_dirs=()
+
+  local f rpath lsha rsha rdir
+  while IFS= read -r f; do
+    [[ -z "$f" ]] && continue
+    [[ -f "$f" ]] || continue
+
+    rpath="$(remote_path_for "$f")"
+
+    lsha="$(sha_local "$f")"
+    rsha="$(sha_remote "$dev" "$rpath" || true)"
+
+    if [[ -n "$rsha" && "$rsha" == "$lsha" ]]; then
+      info "  skip (same): $f"
+      continue
+    fi
+
+    # ensure remote directory exists for nested lib paths
+    if [[ "$rpath" == :/lib/* ]]; then
+      rdir="${rpath%/*}"   # ":/lib/a" etc
+      if [[ -z "${made_dirs[$rdir]+x}" ]]; then
+        mpremote connect "$dev" fs mkdir "$rdir" 2>/dev/null || true
+        made_dirs[$rdir]=1
+      fi
+    fi
+
+    info "  push: $f -> $rpath"
+    mpremote connect "$dev" cp "$f" "$rpath"
+  done <<< "$files"
 }
 
 usage() {
@@ -177,7 +228,7 @@ if [[ "${1:-}" == "--target" ]]; then
 fi
 
 cmd="${1:-}"; shift || true
-[[ -z "${cmd:-}" ]] && { usage; exit 2; }
+#[[ -z "${cmd:-}" ]] && { usage; exit 2; }
 
 if [[ -z "$target" ]]; then
   if ! target="$(autodetect_target)"; then
@@ -200,24 +251,26 @@ case "$cmd" in
   deploy)
     deploy "$dev"
     ;;
-  reset)
-    info "Soft reset: $target ($dev)"
-    mpremote connect "$dev" reset
+  help)
+    die usage
     ;;
-  repl)
-    exec mpremote connect "$dev" repl
-    ;;
-  run)
-    info "Soft reset then repl: $target ($dev)"
-    mpremote connect "$dev" reset
-    exec mpremote connect "$dev" repl
-    ;;
-  wokwi-deploy)
-    [[ -x "$WOKWI_DEPLOY_SCRIPT" ]] || die "WOKWI_DEPLOY_SCRIPT not executable: $WOKWI_DEPLOY_SCRIPT"
-    exec "$WOKWI_DEPLOY_SCRIPT" "$@"
-    ;;
+#  reset)
+#    info "Soft reset: $target ($dev)"
+#    mpremote connect "$dev" reset
+#    ;;
+#  repl)
+#    exec mpremote connect "$dev" repl
+#    ;;
+#  run)
+#    info "Soft reset then repl: $target ($dev)"
+#    mpremote connect "$dev" reset
+#    exec mpremote connect "$dev" repl
+#    ;;
+#  wokwi-deploy)
+#    [[ -x "$WOKWI_DEPLOY_SCRIPT" ]] || die "WOKWI_DEPLOY_SCRIPT not executable: $WOKWI_DEPLOY_SCRIPT"
+#    exec "$WOKWI_DEPLOY_SCRIPT" "$@"
+#    ;;
   *)
-    usage
-    die "Unknown command: $cmd"
+    exec mpremote connect "$dev" "$cmd" "$@"
     ;;
 esac
