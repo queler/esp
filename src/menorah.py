@@ -3,14 +3,15 @@
 import uasyncio as asyncio
 import time
 import config
+import dttuple
 
 # Bit mappings (MSB -> LSB)
 MONTH_BITS = (8, 7, 6, 5)
-DAY_BITS   = (0, 4, 3, 2, 1)
+DAY_BITS = (0, 4, 3, 2, 1)
 
-HOUR_BITS  = (8, 7, 6, 5)
-FACE_BITS  = (4, 3, 2, 1)
-PM_BIT     = 0
+HOUR_BITS = (8, 7, 6, 5)
+FACE_BITS = (4, 3, 2, 1)
+PM_BIT = 0
 
 
 def _bits_to_indices(value: int, idxs_msb_to_lsb):
@@ -51,6 +52,7 @@ def _render_time(dt6):
     if pm:
         on.append(PM_BIT)
     return on
+
 
 class MenorahController:
     """
@@ -110,7 +112,7 @@ class MenorahController:
             self._idle_last_ms = now
             self._idle_last_on = None  # force refresh on view switch
 
-        dt6 = self._time_fn()
+        dt6 = dttuple.add_secs(self._time_fn(), 150)
         on = _render_date(dt6) if self._idle_view == 0 else _render_time(dt6)
         self._apply_bits(on)
 
@@ -182,11 +184,9 @@ class MenorahController:
             # 1..8 = Hanukkah night N
             self._apply_hanukkah_lit(state)
 
-
     # ------------------------------------------------------------------
     # Task
     # ------------------------------------------------------------------
-
 
     async def run(self, poll_ms: int = 100) -> None:
         while True:

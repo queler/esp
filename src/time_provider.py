@@ -7,7 +7,33 @@ try:
 except ImportError:
     ntptime = None
 
+def _weekday_mon0(y, m, d):
+    # Sakamoto; returns Mon=0..Sun=6
+    t = (0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4)
+    y2 = y - (1 if m < 3 else 0)
+    w = (y2 + y2//4 - y2//100 + y2//400 + t[m-1] + d) % 7  # Sun=0..Sat=6
+    return (w - 1) % 7  # Mon=0..Sun=6
 
+def _nth_sunday(y, m, n):
+    wd1 = _weekday_mon0(y, m, 1)
+    first_sun = 1 + ((6 - wd1) % 7)  # Sunday=6
+    return first_sun + 7*(n-1)
+
+def _us_dst_active_utc(now_epoch, year, std_offset_min):
+    # US DST (since 2007): starts 2nd Sunday in March @ 02:00 local standard
+    # ends 1st Sunday in Nov @ 02:00 local daylight
+    std_off_h = std_offset_min // 60  # e.g. -5 for EST
+
+    start_day = _nth_sunday(year, 3, 2)
+    end_day   = _nth_sunday(year, 11, 1)
+
+    # start UTC = 02:00 - std_off_h
+    start_utc = _mktime_safe((year, 3, start_day, 2 - std_off_h, 0, 0))
+
+    # end is 02:00 local daylight (std+1) => UTC = 02:00 - (std_off_h+1) = 01:00 - std_off_h
+    end_utc   = _mktime_safe((year, 11, end_day, 1 - std_off_h, 0, 0))
+
+    return start_utc <= now_epoch < end_utc
 class BaseTimeProvider:
     async def init(self, status_manager=None):
         # Override in subclass
@@ -27,6 +53,9 @@ class NTPTimeProvider(BaseTimeProvider):
         self._host = host
         self._tz_offset = tz_offset_minutes
         self._valid = False
+        self._std_offset = tz_offset_minutes
+        self._dst_minutes = 0
+        self._dst_next_check = 0
 
     async def init(self, status_manager=None):
         """
@@ -68,16 +97,20 @@ class NTPTimeProvider(BaseTimeProvider):
             await asyncio.sleep_ms(200)
 
     def get_time(self):
-        """
-        Return current local time as (Y, M, D, h, m, s),
-        applying the configured TZ offset in minutes.
-        """
-        t = utime.localtime()  # (Y,M,D,h,m,s,wd,yd)
-        if self._tz_offset:
-            # convert to seconds, offset, back to tuple
-            secs = utime.mktime(t[:6] + (0, 0)) + self._tz_offset * 60
-            t = utime.localtime(secs)
-        return t[:6]
+        now = utime.time()  # UTC epoch seconds
+
+        # recompute DST occasionally
+        if now >= self._dst_next_check:
+            y = utime.localtime(now)[0]  # UTC year
+            dst = _us_dst_active_utc(now, y, self._std_offset)
+            self._dst_minutes = 60 if dst else 0
+
+            # check daily, but hourly during Mar/Nov (near transitions)
+            mo = utime.localtime(now)[1]
+            self._dst_next_check = now + (3600 if mo in (3, 11) else 86400)
+
+        secs = now + (self._std_offset + self._dst_minutes) * 60
+        return utime.localtime(secs)[:6]
 
     def is_valid(self):
         """
