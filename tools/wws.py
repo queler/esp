@@ -172,7 +172,7 @@ def main():
         print(f"[ERROR] LOCAL_DIR does not exist: {local_dir}")
         return
 
-    local_files, target_files = collect_target_files(local_dir)
+    local_files, target_files = collect_target_files(local_dir.joinpath('src'))
     if not target_files:
         print("[ERROR] No files to sync – check LOCAL_DIR / IGNORE_PATTERNS / EXTRA_FILES.")
         return
