@@ -88,7 +88,8 @@ class WiFiManager:
             else:
                 result[ssid] = rssi
         return result
-
+    def disconnect(self):
+        self.adapter['sta'].disconnect()
     def connect(self, per_network_timeout=8):
         """Try to connect to saved networks; prefer the strongest available saved network.
         Returns True on success."""

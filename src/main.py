@@ -54,6 +54,8 @@ async def main():
         )
     await time_provider.init(status)
     TP = time_provider
+    if not config.USE_DEBUG_TIME:
+        wifi.disconnect()
     # --- Schedule (event-based) ---
     schedule_mgr = Han(TP.get_time())
     if not schedule_mgr.events:
